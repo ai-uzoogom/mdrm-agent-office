@@ -12,7 +12,7 @@ export class OfficeScene {
     this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0,encourage:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.surfaceLabels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.displays=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
     this.motionQuery=matchMedia('(prefers-reduced-motion: reduce)');this.reduced=this.motionQuery.matches;this.pointer=new THREE.Vector2();this.raycaster=new THREE.Raycaster();this.projectVector=new THREE.Vector3();this.raf=null;this.ready=false;this.battleCursor=2;
     this.nextCrew=1.6;this.nextLed=.4;this.nextCode=.13;this.nextBattle=1.8;this.nextMeeting=5;this.lastCalendar=0;
-    this.zoom=VIEW.min;this.viewPan=new THREE.Vector2();this.viewFit=null;this.drag=null;this.touchGesture=null;this.suppressClick=false;this.navigation=stage.querySelector('.scene-navigation');
+    this.zoom=VIEW.min;this.viewPan=new THREE.Vector2();this.viewFit=null;this.drag=null;this.touchGesture=null;this.suppressClick=false;
   }
   async init(){
     this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:false,alpha:true,powerPreference:'high-performance'});
@@ -205,7 +205,7 @@ export class OfficeScene {
   installEvents(){
     this.canvas.addEventListener('pointerdown',event=>{
       if(event.button!==0||this.drag||this.touchGesture)return;this.suppressClick=false;
-      if(this.zoom<=VIEW.min)return;
+      if(this.zoom<=VIEW.min&&event.pointerType==='touch')return;
       this.drag={id:event.pointerId,x:event.clientX,y:event.clientY,startX:event.clientX,startY:event.clientY,moved:false};this.canvas.setPointerCapture(event.pointerId);
     });
     this.canvas.addEventListener('pointermove',event=>{
@@ -255,7 +255,7 @@ export class OfficeScene {
     this.canvas.addEventListener('pointerleave',()=>this.canvas.classList.remove('is-pointing'));
     this.canvas.addEventListener('click',event=>{if(this.suppressClick){this.suppressClick=false;return;}const actor=this.hit(event);if(actor)this.describe(actor);});
     this.canvas.addEventListener('wheel',event=>{
-      if(!event.ctrlKey&&!event.metaKey)return;event.preventDefault();
+      event.preventDefault();
       const rect=this.canvas.getBoundingClientRect(),unit=event.deltaMode===1?16:event.deltaMode===2?this.height:1;
       this.setZoom(this.zoom*Math.exp(-event.deltaY*unit*.002),{x:(event.clientX-rect.left)/rect.width,y:(event.clientY-rect.top)/rect.height});
     },{passive:false});
@@ -264,7 +264,7 @@ export class OfficeScene {
       if(['+','='].includes(event.key))this.zoomBy(1);
       else if(['-','_'].includes(event.key))this.zoomBy(-1);
       else if(event.key==='0'||event.key==='Home')this.resetView();
-      else if(this.zoom>VIEW.min&&event.key.startsWith('Arrow'))this.moveView(event.key.slice(5).toLowerCase());
+      else if(event.key.startsWith('Arrow'))this.moveView(event.key.slice(5).toLowerCase());
       else return;event.preventDefault();
     });
     document.addEventListener('visibilitychange',()=>this.updateMotion());
@@ -306,7 +306,7 @@ export class OfficeScene {
   applyView(){
     if(!this.viewFit)return;
     this.updateRenderResolution();
-    const fit=this.viewFit,maxX=fit.width*(1-1/this.zoom)/2,maxY=fit.height*(1-1/this.zoom)/2;
+    const fit=this.viewFit,maxX=fit.width*Math.max(.15,(1-1/this.zoom)/2),maxY=fit.height*Math.max(.15,(1-1/this.zoom)/2);
     this.viewPan.x=THREE.MathUtils.clamp(this.viewPan.x,-maxX,maxX);this.viewPan.y=THREE.MathUtils.clamp(this.viewPan.y,-maxY,maxY);
     const cx=fit.cx+this.viewPan.x,cy=fit.cy+this.viewPan.y;
     this.camera.left=cx-fit.width/2;this.camera.right=cx+fit.width/2;this.camera.top=cy+fit.height/2;this.camera.bottom=cy-fit.height/2;this.camera.zoom=this.zoom;this.camera.updateProjectionMatrix();
@@ -323,7 +323,7 @@ export class OfficeScene {
   zoomBy(steps){this.setZoom(Math.round((this.zoom+steps*VIEW.step)*100)/100);}
   resetView(){this.viewPan.set(0,0);this.setZoom(VIEW.min);}
   panByPixels(x,y){
-    if(!this.ready||!this.viewFit||this.zoom<=VIEW.min)return;
+    if(!this.ready||!this.viewFit)return;
     this.viewPan.x-=x*this.viewFit.width/(this.width*this.zoom);this.viewPan.y+=y*this.viewFit.height/(this.height*this.zoom);this.applyView();
   }
   moveView(direction){
@@ -416,10 +416,6 @@ export class OfficeScene {
   }
   updateOverlays(){
     const occupied=[];
-    if(this.navigation){
-      const w=this.navigation.offsetWidth,h=this.navigation.offsetHeight;
-      occupied.push({x:this.navigation.offsetLeft+w/2,y:this.navigation.offsetTop+h,w,h});
-    }
     for(const entry of this.labels){
       const p=this.project(entry.target,entry.height);entry.el.style.transform=`translate(${Math.round(p.x)}px,${Math.round(p.y)}px) translate(-50%,-100%)`;
       const w=entry.el.offsetWidth,h=entry.el.offsetHeight;if(w&&p.x>=0&&p.x<=this.width&&p.y>=0&&p.y<=this.height)occupied.push({x:p.x,y:p.y,w,h});

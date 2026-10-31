@@ -44,25 +44,11 @@
           <div id="scene-stage" class="scene-stage" aria-busy="true">
             <canvas id="office-canvas" role="img" tabindex="0" aria-describedby="scene-view-help" aria-label="아이소메트릭 MDRM 오피스. 개발실의 네 개발자와 세 직원이 릴리스를 준비하고, 일정 독려 담당이 확성기로 진행 상황을 확인합니다. 서버실에서 MDRM 용사와 AGENT가 보안 이슈 몬스터를 방어합니다."></canvas>
             <div id="scene-overlays" aria-hidden="true"></div>
-            <div class="scene-navigation" role="group" aria-label="사무실 화면 조절">
-              <div id="scene-pan-controls" class="scene-pan-controls" role="group" aria-label="확대 화면 이동" hidden>
-                <button type="button" data-pan="left" aria-label="화면 왼쪽으로 이동" title="왼쪽으로 이동" disabled><svg class="icon pan-left" aria-hidden="true"><use href="#i-arrow"/></svg></button>
-                <button type="button" data-pan="up" aria-label="화면 위로 이동" title="위로 이동" disabled><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
-                <button type="button" data-pan="down" aria-label="화면 아래로 이동" title="아래로 이동" disabled><svg class="icon pan-down" aria-hidden="true"><use href="#i-arrow"/></svg></button>
-                <button type="button" data-pan="right" aria-label="화면 오른쪽으로 이동" title="오른쪽으로 이동" disabled><svg class="icon pan-right" aria-hidden="true"><use href="#i-arrow"/></svg></button>
-              </div>
-              <div class="scene-zoom-controls">
-                <button type="button" id="zoom-out" aria-label="사무실 축소" title="축소 (−)" disabled><svg class="icon" aria-hidden="true"><use href="#i-minus"/></svg></button>
-                <output id="zoom-level" aria-label="사무실 확대 비율" aria-live="off">100%</output>
-                <button type="button" id="zoom-in" aria-label="사무실 확대" title="확대 (+)" disabled><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
-                <button type="button" id="zoom-reset" aria-label="사무실 전체 보기" title="전체 보기 (0)" disabled>전체</button>
-              </div>
-            </div>
-            <p id="scene-view-help" class="sr-only">두 손가락을 벌리거나 오므려 사무실을 확대·축소할 수 있습니다. 확대·축소와 방향 버튼으로도 사무실을 살펴보세요. 확대 후에는 장면을 드래그할 수 있습니다. 장면에 초점을 두면 +, −로 확대·축소, 방향키로 이동, 0으로 전체 보기가 가능합니다. Ctrl 또는 Command 키를 누른 채 휠을 움직여도 확대·축소됩니다.</p>
+            <p id="scene-view-help" class="sr-only">장면 위에서 마우스 휠을 위로 굴리면 확대, 아래로 굴리면 축소합니다. 클릭한 채 드래그하면 위치를 옮깁니다. 모바일은 두 손가락을 벌리거나 오므려 확대·축소하고 확대 후 한 손가락으로 이동합니다. 장면에 초점을 두면 +, −와 방향키를 사용할 수 있고 0 또는 Home으로 전체 보기에 복귀합니다.</p>
             <div id="scene-loading" class="scene-loading" role="status"><span class="loading-shield"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span><strong>오피스의 불을 켜는 중</strong><span>동료들이 곧 도착합니다…</span></div>
             <div class="scene-coordinate" aria-hidden="true">MDRM HQ <span>37.5° N · 127.0° E</span></div>
           </div>
-          <div class="scene-caption"><span><svg class="icon" aria-hidden="true"><use href="#i-cursor"/></svg> 두 손가락 확대·축소 · 확대 후 드래그</span><span class="caption-tag">AUTO · IDLE</span></div>
+          <div class="scene-caption"><span><svg class="icon" aria-hidden="true"><use href="#i-cursor"/></svg> 휠·두 손가락 확대·축소 · 드래그 이동</span><span class="caption-tag">AUTO · IDLE</span></div>
         </section>
         <aside class="side-panels" aria-label="오피스 실시간 상태">
           <section class="side-panel rpg-window" aria-labelledby="agents-heading"><div class="panel-heading"><h2 id="agents-heading"><svg class="icon" aria-hidden="true"><use href="#i-crew"/></svg> 에이전트</h2><span class="panel-count" id="crew-count"></span></div><div class="agent-list" id="agent-list"></div></section>

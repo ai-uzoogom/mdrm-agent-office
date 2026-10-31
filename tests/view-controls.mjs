@@ -23,11 +23,7 @@ async function openPage({width=1280,height=1000,touch=false}={}){
 }
 async function checkLayout(page){
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'horizontal overflow');
- const stage=await page.locator('#scene-stage').boundingBox();
- for(const button of await page.locator('.scene-navigation button:visible').all()){
-  const bounds=await button.boundingBox();assert.ok(bounds.width>=44&&bounds.height>=44,'small touch target');
-  assert.ok(bounds.x>=stage.x&&bounds.y>=stage.y&&bounds.x+bounds.width<=stage.x+stage.width&&bounds.y+bounds.height<=stage.y+stage.height,'control outside stage');
- }
+ assert.equal(await page.locator('.scene-navigation,#zoom-in,#zoom-out,#zoom-reset,[data-pan]').count(),0,'camera buttons still cover the scene');
 }
 async function capture(page,name){await page.locator('.scene-panel').screenshot({path:`test-results/${name}.png`});}
 async function labels(page){return page.locator('.surface-label').evaluateAll(nodes=>nodes.map(node=>{
@@ -38,15 +34,15 @@ try{
  const {page,context}=await openPage();
  const canvas=page.locator('#office-canvas');
  const initial=await snapshot(page),initialLabels=await labels(page);
- assert.equal(initial.view.zoom,1);assert.ok(await page.locator('#zoom-out').isDisabled());assert.ok(await page.locator('#zoom-reset').isDisabled());
- assert.ok(await page.locator('#scene-pan-controls').isHidden());await checkLayout(page);
- for(let i=0;i<4;i++)await page.locator('#zoom-in').click();
+ assert.equal(initial.view.zoom,1);await checkLayout(page);
+ let fitBounds=await canvas.boundingBox();const beforeFitDrag=await snapshot(page);await page.mouse.move(fitBounds.x+fitBounds.width*.5,fitBounds.y+fitBounds.height*.5);await page.mouse.down();await page.mouse.move(fitBounds.x+fitBounds.width*.5+40,fitBounds.y+fitBounds.height*.5+20,{steps:5});await page.mouse.up();near((await snapshot(page)).hero.x,beforeFitDrag.hero.x+40,1);await canvas.press('0');
+ for(let i=0;i<4;i++)await canvas.press('+');
  const enlarged=await snapshot(page),enlargedLabels=await labels(page);
- assert.equal(enlarged.view.zoom,2);assert.ok(enlarged.target.width>initial.target.width,'zoom did not increase render detail');assert.ok(enlarged.target.width*enlarged.target.height<=8005000,'render pixel budget exceeded');assert.equal(await page.locator('#zoom-level').textContent(),'200%');
+ assert.equal(enlarged.view.zoom,2);assert.ok(enlarged.target.width>initial.target.width,'zoom did not increase render detail');assert.ok(enlarged.target.width*enlarged.target.height<=8005000,'render pixel budget exceeded');
  near(enlarged.crew[0].screen.x-enlarged.crew[1].screen.x,2*(initial.crew[0].screen.x-initial.crew[1].screen.x));
  for(let i=0;i<initialLabels.length;i++){near(enlargedLabels[i].scale,initialLabels[i].scale*2,.001);near(enlargedLabels[i].angle,initialLabels[i].angle,.001);}
  await capture(page,'view-desktop-200');
- record('100–200% buttons scale the scene and wall/board text together');
+ record('100–200% keyboard zoom scale the scene and wall/board text together');
 
  let bounds=await canvas.boundingBox();
  await page.mouse.click(bounds.x+enlarged.hero.x,bounds.y+enlarged.hero.y);
@@ -64,37 +60,36 @@ try{
  await page.keyboard.press('0');assert.deepEqual((await snapshot(page)).view,{zoom:1,pan:[0,0]});
  await page.keyboard.press('-');assert.equal((await snapshot(page)).view.zoom,1);
  for(let i=0;i<10;i++)await page.keyboard.press('+');
- assert.equal((await snapshot(page)).view.zoom,3);assert.ok(await page.locator('#zoom-in').isDisabled());
+ assert.equal((await snapshot(page)).view.zoom,3);
  await page.keyboard.press('+');assert.equal((await snapshot(page)).view.zoom,3);
- await page.locator('#zoom-out').click();assert.equal((await snapshot(page)).view.zoom,2.75);
+ await canvas.press('-');assert.equal((await snapshot(page)).view.zoom,2.75);
  for(let i=0;i<20;i++)await page.locator('#office-canvas').press('ArrowRight');
- assert.ok(await page.locator('[data-pan="right"]').isDisabled());
- await page.locator('[data-pan="left"]').click();assert.ok(await page.locator('[data-pan="right"]').isEnabled());
- await page.locator('#zoom-reset').click();assert.deepEqual((await snapshot(page)).view,{zoom:1,pan:[0,0]});
- record('keyboard and direction buttons work; 100–300% and pan limits are enforced; reset restores the whole office');
+ const edge=(await snapshot(page)).view.pan[0];await canvas.press('ArrowRight');near((await snapshot(page)).view.pan[0],edge,.001);await canvas.press('ArrowLeft');assert.ok((await snapshot(page)).view.pan[0]<edge);
+ await canvas.press('0');assert.deepEqual((await snapshot(page)).view,{zoom:1,pan:[0,0]});
+ record('keyboard directions work; 100–300% and pan limits are enforced; reset restores the whole office');
 
  bounds=await canvas.boundingBox();
  await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2);
- const scrollBefore=await page.evaluate(()=>scrollY);await page.mouse.wheel(0,100);await page.waitForTimeout(150);
- assert.ok(await page.evaluate(y=>scrollY>y,scrollBefore),'ordinary wheel no longer scrolls the page');
- assert.equal((await snapshot(page)).view.zoom,1);
- bounds=await canvas.boundingBox();const anchored=(await snapshot(page)).hero;
- await page.mouse.move(bounds.x+anchored.x,bounds.y+anchored.y);await page.keyboard.down('Control');await page.mouse.wheel(0,-160);await page.keyboard.up('Control');await page.waitForTimeout(100);
+ const scrollBefore=await page.evaluate(()=>scrollY);await page.mouse.wheel(0,-160);await page.waitForTimeout(100);
+ assert.ok((await snapshot(page)).view.zoom>1);near(await page.evaluate(()=>scrollY),scrollBefore,1);
+ await page.mouse.wheel(0,160);await page.waitForTimeout(100);near((await snapshot(page)).view.zoom,1,.01);
+ const anchored=(await snapshot(page)).hero;bounds=await canvas.boundingBox();await page.mouse.move(bounds.x+anchored.x,bounds.y+anchored.y);await page.mouse.wheel(0,-160);await page.waitForTimeout(100);
  const wheel=await snapshot(page);assert.ok(wheel.view.zoom>1);near(wheel.hero.x,anchored.x);near(wheel.hero.y,anchored.y);
- record('ordinary wheel scrolls the page; Ctrl+wheel zooms around the pointed character');
+ await page.mouse.move(5,100);const outsideScroll=await page.evaluate(()=>scrollY);await page.mouse.wheel(0,100);await page.waitForTimeout(150);assert.ok(await page.evaluate(y=>scrollY>y,outsideScroll));
+ record('plain wheel up/down zooms at the cursor; wheel outside the scene scrolls the page');
 
- await page.locator('#zoom-reset').click();for(let i=0;i<4;i++)await page.locator('#zoom-in').click();
+ await canvas.press('0');for(let i=0;i<4;i++)await canvas.press('+');
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(120);await checkLayout(page);
  assert.equal((await snapshot(page)).view.zoom,2);assert.notEqual(await page.locator('.wall-label').first().evaluate(node=>getComputedStyle(node).display),'none');
  await capture(page,'view-mobile-200');
- await page.locator('#zoom-reset').click();await capture(page,'view-mobile-100');
+ await canvas.press('0');await capture(page,'view-mobile-100');
  const frozen=await snapshot(page);await page.waitForTimeout(300);const later=await snapshot(page);
  assert.equal(later.elapsed,0);assert.equal(later.frames,frozen.frames);assert.equal(later.metrics.combat,0);
- record('zoom survives viewport changes; 390px controls fit; reduced motion stays paused after navigation');
+ record('zoom survives viewport changes; 390px scene remains unobstructed; reduced motion stays paused after navigation');
  await context.close();
 
  const mobile=await openPage({width:390,height:844,touch:true});
- for(let i=0;i<4;i++)await mobile.page.locator('#zoom-in').tap();
+ for(let i=0;i<4;i++)await mobile.page.locator('#office-canvas').press('+');
  const beforeTouch=await snapshot(mobile.page),touchBounds=await mobile.page.locator('#office-canvas').boundingBox();
  const touchLog=await mobile.page.locator('#activity-log').textContent();
  const client=await mobile.context.newCDPSession(mobile.page);
@@ -104,7 +99,7 @@ try{
  await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  const afterTouch=await snapshot(mobile.page);near(afterTouch.hero.x,beforeTouch.hero.x+40,1);near(afterTouch.hero.y,beforeTouch.hero.y-24,1);
  assert.equal(await mobile.page.locator('#activity-log').textContent(),touchLog);
- await mobile.page.locator('#zoom-reset').tap();assert.equal((await snapshot(mobile.page)).view.zoom,1);
+ await mobile.page.locator('#office-canvas').press('0');assert.equal((await snapshot(mobile.page)).view.zoom,1);
  await mobile.page.locator('#office-canvas').scrollIntoViewIfNeeded();
  const pinchBounds=await mobile.page.locator('#office-canvas').boundingBox(),mx=pinchBounds.x+pinchBounds.width*.45,my=pinchBounds.y+pinchBounds.height*.4;
  const baseline=await snapshot(mobile.page),baselineLog=await mobile.page.locator('#activity-log').textContent();
@@ -120,7 +115,7 @@ try{
  for(const distance of [120,80,40])await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:points(distance)});
  near((await snapshot(mobile.page)).view.zoom,1,.001);await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:points(60)});await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:points(300)});near((await snapshot(mobile.page)).view.zoom,3,.001);
- await client.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await mobile.page.locator('#zoom-reset').tap();
+ await client.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await mobile.page.locator('#office-canvas').press('0');
  record('two real touch points spread/pan/shrink at their midpoint; 100–300% limits, cancel and no accidental actor click');
  const scrollStart=await mobile.page.evaluate(()=>scrollY),scrollBounds=await mobile.page.locator('#office-canvas').boundingBox();
  const sx=scrollBounds.x+scrollBounds.width*.5,sy=scrollBounds.y+scrollBounds.height*.5;
@@ -134,10 +129,10 @@ try{
  await client.send('Emulation.setPageScaleFactor',{pageScaleFactor:1});await mobile.page.waitForFunction(width=>window.__OFFICE_DEBUG__.snapshot().target.width===width,pinchBefore);
  record('mobile browser pinch increases canvas resolution and restores it afterward');
  for(const viewport of [{width:375,height:812},{width:844,height:390}]){
-  await mobile.page.setViewportSize(viewport);await mobile.page.waitForTimeout(120);await mobile.page.locator('#zoom-in').tap();await checkLayout(mobile.page);await mobile.page.locator('#zoom-reset').tap();
+  await mobile.page.setViewportSize(viewport);await mobile.page.waitForTimeout(120);await mobile.page.locator('#office-canvas').press('+');await checkLayout(mobile.page);await mobile.page.locator('#office-canvas').press('0');
  }
  await client.detach();await mobile.context.close();
- record('Chrome touch emulation: tap, drag, reset; 375px portrait and 844px landscape controls fit');
+ record('Chrome touch emulation: pinch, drag, keyboard reset; 375px portrait and 844px landscape controls fit');
  assert.deepEqual(errors,[]);
  await writeFile('test-results/view-controls-report.json',JSON.stringify({date:new Date().toISOString(),url,browser:browser.version(),checks,errors},null,2));
 }catch(error){

@@ -25,8 +25,8 @@ try{
  for(const display of report.displays){assert.ok(display.changedPixels>150,'display animation is visually static');for(const point of display.contact){assert.ok(point&&point.gap<.005,'display floats away from its native LCD');assert.ok(point.alignment>.9999,'display does not follow the native LCD tilt');}}
  await page.setViewportSize({width:390,height:844});await page.goto(process.env.OFFICE_URL||'http://127.0.0.1:4173/');await page.waitForFunction(()=>window.__OFFICE_DEBUG__?.snapshot().ready);
  for(const selector of ['.name-label','.wall-label','.monster-label','.board-label'])assert.notEqual(await page.locator(selector).first().evaluate(e=>getComputedStyle(e).display),'none');
- for(let i=0;i<5;i++)await page.getByRole('button',{name:'사무실 확대',exact:true}).click();
- assert.equal(await page.locator('#zoom-level').textContent(),'225%');const detail=await page.evaluate(()=>window.__OFFICE_DEBUG__.snapshot());assert.ok(detail.target.width>=1580,'mobile zoom resolution stayed low');await page.locator('#scene-stage').screenshot({path:'test-results/workstations-mobile-225.png'});
+ for(let i=0;i<5;i++)await page.locator('#office-canvas').press('+');
+ assert.equal((await page.evaluate(()=>window.__OFFICE_DEBUG__.snapshot())).view.zoom,2.25);const detail=await page.evaluate(()=>window.__OFFICE_DEBUG__.snapshot());assert.ok(detail.target.width>=1580,'mobile zoom resolution stayed low');await page.locator('#scene-stage').screenshot({path:'test-results/workstations-mobile-225.png'});
  assert.deepEqual(errors,[]);
  console.log(`PASS 4 inward-facing chairs with table clearance, ${data.samples.length*10} hand samples, 5 attached displays, and higher-resolution mobile zoom`);
 }finally{await browser.close();}
