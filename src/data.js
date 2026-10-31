@@ -3,8 +3,8 @@ export const PRODUCT = { name: 'MDRM', current: '4.7.3', next: '4.7.4', releaseD
 // 세밀한 픽셀 표현: 화면 밀도를 반영하되 렌더 비용에 상한을 둡니다.
 export const RENDERING = { maxSceneWidth: 1920, maxPixelRatio: 3, thumbnailSize: 384 };
 export const GRADES = {
-  low: { ko: '낮음', en: 'LOW', form: '꼬마 슬라임', color: '#4fd16b' },
-  medium: { ko: '보통', en: 'MEDIUM', form: '슬라임', color: '#c79bff' },
+  low: { ko: '낮음', en: 'LOW', form: '꼬마 유령', color: '#4fd16b' },
+  medium: { ko: '보통', en: 'MEDIUM', form: '유령', color: '#c79bff' },
   high: { ko: '높음', en: 'HIGH', form: '오거', color: '#f6a050' },
   critical: { ko: '치명', en: 'CRITICAL', form: '드래곤', color: '#ff8a86' },
 };

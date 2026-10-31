@@ -51,20 +51,33 @@ try{
  assert.equal(await page.locator('.agent-row').count(),6);
  assert.equal(await page.locator('.monster-row').count(),3);
  assert.equal(await page.locator('[role="tab"]').count(),4);
- assert.equal((await snapshot(page)).assets.files,27);
+ assert.equal((await snapshot(page)).assets.files,28);
  assert.ok((await snapshot(page)).assets.characterAnimations.includes('sit'));
+ for(const clip of ['idle','walk','attack-melee-right'])assert.ok((await snapshot(page)).assets.ghostAnimations.includes(clip));
+ assert.equal((await snapshot(page)).issues.find(i=>i.id==='nginx').kind,'ghost');
+ assert.equal(await page.locator('.issue-card[data-issue="nginx"] h4').first().textContent(),'nginx 유령');
+ assert.equal(await page.locator('[data-grade="low"] h3').textContent(),'꼬마 유령');
+ assert.equal(await page.locator('[data-grade="medium"] h3').textContent(),'유령');
  assert.ok(await page.locator('[data-thumbnail]').evaluateAll((images,size)=>images.every(i=>i.complete&&i.naturalWidth===size&&i.naturalHeight===size),RENDERING.thumbnailSize));
  assert.equal((await snapshot(page)).target.width,1752);
  assert.equal(await page.locator('#office-canvas').evaluate(canvas=>canvas.width),2*(await snapshot(page)).viewport.width);
  await checkSurfaceLabels(page);
  await screenshot(page,'desktop');
  record('1280px initial render, local assets, thumbnails and KST');
- await page.evaluate(()=>{window.__qaFrameTimes=[];const sample=t=>{window.__qaFrameTimes.push(t);window.__qaFrameRequest=requestAnimationFrame(sample);};window.__qaFrameRequest=requestAnimationFrame(sample);});
+ await page.evaluate(()=>{
+  window.__qaFrameTimes=[];const sample=t=>{window.__qaFrameTimes.push(t);window.__qaFrameRequest=requestAnimationFrame(sample);};window.__qaFrameRequest=requestAnimationFrame(sample);
+  window.__qaGhostSamples=[];window.__qaGhostTimer=setInterval(()=>{const ghost=window.__OFFICE_DEBUG__.snapshot().issues.find(issue=>issue.id==='nginx');window.__qaGhostSamples.push({position:ghost.position,scale:ghost.scale});},100);
+ });
  const before=await snapshot(page),wallStart=Date.now();
  await page.waitForTimeout(10000);
  const after=await snapshot(page),wall=(Date.now()-wallStart)/1000,fps=(after.frames-before.frames)/wall;
  for(const key of ['walk','typing','led','melee','breath'])assert.ok(after.metrics[key]>0,`no ${key} within 10s`);
  const frameTimes=await page.evaluate(()=>{cancelAnimationFrame(window.__qaFrameRequest);return window.__qaFrameTimes;});
+ const ghostSamples=await page.evaluate(()=>{clearInterval(window.__qaGhostTimer);return window.__qaGhostSamples;});
+ assert.ok(ghostSamples.length>40);
+ assert.ok(ghostSamples.every(sample=>sample.position[1]>.1&&sample.scale.every(value=>value===1)),'ghost touched the floor or squashed like a slime');
+ assert.ok(Math.max(...ghostSamples.map(sample=>sample.position[0]))-Math.min(...ghostSamples.map(sample=>sample.position[0]))>5,'ghost never approached the defense line');
+ record('Kenney ghost floats through approach and knockback without slime squash',{samples:ghostSamples.length,minimumHeight:Math.min(...ghostSamples.map(sample=>sample.position[1]))});
  const secondBuckets=Array.from({length:9},(_,i)=>frameTimes.filter(t=>t>=frameTimes[0]+i*1000&&t<frameTimes[0]+(i+1)*1000).length);
  const minimumOneSecondFPS=Math.min(...secondBuckets);
  assert.ok(fps>=30&&minimumOneSecondFPS>=30,`FPS below 30: average=${fps}, minimum second=${minimumOneSecondFPS}`);
@@ -87,7 +100,7 @@ try{
   assert.ok((await page.locator('#activity-log li').first().textContent()).includes(expected),`raycast ${key}`);
  }
  const state=await snapshot(page);
- for(const [point,expected] of [[state.crew[0].screen,'php2shell 패치'],[state.issues[2].screen,'nginx 슬라임']]){
+ for(const [point,expected] of [[state.crew[0].screen,'php2shell 패치'],[state.issues[2].screen,'nginx 유령']]){
   await page.mouse.click(canvasRect.x+point.x,canvasRect.y+point.y);await page.waitForTimeout(40);
   assert.ok((await page.locator('#activity-log li').first().textContent()).includes(expected),`raycast ${expected}`);
  }
@@ -115,7 +128,7 @@ try{
  await screenshot(reduced.page,'mobile-reduced');record('initial reduced-motion preference: static frame, fixed bubbles, no combat');await reduced.context.close();
  const source=await readFile('src/data.js','utf8');
  const added=await openPage({reduced:'reduce',source:source.replace('export const ISSUES = [',"export const ISSUES = [\n  { id:'qa-low', name:'추가 이슈', grade:'low' },")});
- assert.equal((await snapshot(added.page)).issues.length,4);assert.equal(await added.page.locator('.monster-row').count(),4);assert.equal(await added.page.locator('.issue-card[data-issue="qa-low"]').count(),2);assert.ok((await added.page.locator('[data-grade="low"]').textContent()).includes('추가 이슈'));assert.ok((await added.page.locator('#issue-count').textContent()).includes('4건'));assert.ok((await added.page.locator('.timeline-summary').first().textContent()).includes('4건'));
+ assert.equal((await snapshot(added.page)).issues.length,4);assert.equal((await snapshot(added.page)).issues.find(i=>i.id==='qa-low').kind,'ghost');assert.ok((await snapshot(added.page)).issues.find(i=>i.id==='qa-low').height<(await snapshot(added.page)).issues.find(i=>i.id==='nginx').height);assert.equal(await added.page.locator('.monster-row').count(),4);assert.equal(await added.page.locator('.issue-card[data-issue="qa-low"]').count(),2);assert.ok((await added.page.locator('[data-grade="low"]').textContent()).includes('추가 이슈'));assert.ok((await added.page.locator('#issue-count').textContent()).includes('4건'));assert.ok((await added.page.locator('.timeline-summary').first().textContent()).includes('4건'));
  record('ISSUES addition updates scene, sidebar, both timelines, bestiary and count');await added.context.close();
  const changed=await openPage({reduced:'reduce',source:source.replace("id: 'nginx', name: 'nginx', grade: 'medium'","id: 'nginx', name: 'nginx', grade: 'critical'")});
  assert.equal((await snapshot(changed.page)).issues.find(i=>i.id==='nginx').grade,'critical');assert.ok((await changed.page.locator('[data-inspect="issue-nginx"]').textContent()).includes('드래곤'));assert.ok((await changed.page.locator('[data-grade="critical"]').textContent()).includes('nginx'));assert.equal(await changed.page.locator('.issue-card[data-issue="nginx"] h4').first().textContent(),'nginx 드래곤');

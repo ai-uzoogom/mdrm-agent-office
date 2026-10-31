@@ -13,7 +13,7 @@ test('release countdown handles before, exact date and after using Korean calend
  assert.equal(dDay('2026-11-14',new Date('2026-11-14T15:00:00Z')),'D+1');
 });
 test('Korean particles use batchim, including grade-form subjects',()=>{
- assert.equal(particle('nginx 슬라임'),'nginx 슬라임이');
+ assert.equal(particle('nginx 유령'),'nginx 유령이');
  assert.equal(particle('Java 인증서 오거'),'Java 인증서 오거가');
  assert.equal(particle('php2shell 드래곤','을/를'),'php2shell 드래곤을');
  assert.equal(particle('Java 인증서 오거','을/를'),'Java 인증서 오거를');

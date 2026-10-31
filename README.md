@@ -51,6 +51,7 @@ Three.js, GLB, PNG 팔레트와 폰트를 모두 포함했습니다. 실행 중 
 - 안티앨리어싱은 꺼져 있습니다. DirectionalLight 1개, HemisphereLight 1개, `BasicShadowMap`을 사용합니다.
 - 말풍선·이름·등급·벽 라벨·릴리스 보드 제목은 HTML입니다. 벽 표지판과 보드 제목은 해당 3D 객체에 연결된 면의 꼭짓점을 투영해 상자 전체의 위치·기울기·크기를 맞춥니다. 말풍선은 가까운 빈 위치를 찾고 벽 표지판과 보드 제목 영역도 피해 배치합니다.
 - 직원은 모델의 실제 `sit`, `idle`, `walk` 애니메이션을 사용합니다. 보행 속도는 약 2.4 units/s입니다.
+- 낮음·보통 등급은 Graveyard Kit의 흰 유령 모델을 사용합니다. 낮음은 작은 `꼬마 유령`, 보통은 `유령`이며 도감에서도 크기를 구분합니다. 원본의 `idle`·`walk`·`attack-melee-right` 애니메이션과 부유 이동을 사용하고, 장면·패널·이력·도감·활동 로그에 같은 이름과 모델을 반영합니다.
 - 근접 전투, 검 휘두르기, 넉백, 스파크, 드래곤 브레스와 방패 동작은 하나의 프레임 시간 기반 상태 머신으로 진행합니다. 별도의 전투 타이머가 백그라운드에서 계속 실행되지 않습니다.
 - 숨김 상태에서는 `requestAnimationFrame`을 취소하고 시뮬레이션 시간이 멈춥니다. 복귀 시 누적된 시간을 한꺼번에 진행하지 않습니다.
 - `prefers-reduced-motion: reduce`에서는 초기 정지 화면과 고정 상태를 표시합니다. 창 크기 변경·상태 조회·화면 확대 및 이동에 필요한 재렌더만 수행합니다.
@@ -72,12 +73,13 @@ Three.js, GLB, PNG 팔레트와 폰트를 모두 포함했습니다. 실행 중 
 | [Kenney Mini Characters](https://kenney.nl/assets/mini-characters) · CC0 | 6개 캐릭터 GLB, `idle`·`walk`·`sit` 등 32개 애니메이션 확인 |
 | [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) · CC0 | 책상·의자·모니터·키보드·마우스·책장·책·커피머신·캐비닛·화분·테이블·노트북·러그 등 15개 GLB |
 | [Kenney Mini Dungeon](https://kenney.nl/assets/mini-dungeon) · CC0 | 인간·오크·검·방패·통·돌 6개 GLB |
+| [Kenney Graveyard Kit 5.0](https://kenney.nl/assets/graveyard-kit) · CC0 | `character-ghost.glb`와 원본 팔레트 텍스처, 대기·이동·공격 등 32개 애니메이션 확인 |
 | [Three.js r160](https://github.com/mrdoob/three.js/tree/r160) · MIT | 렌더러와 로더·유틸리티, [LICENSE](vendor/three/LICENSE) 동봉 |
 | [Google Fonts](https://github.com/google/fonts) · SIL OFL | 지정한 두 폰트와 라이선스를 `assets/fonts/`에 동봉 |
 
 처음 제시된 `mini-characters-1` 주소 대신 공식 `mini-characters` 팩을 사용했습니다. 실제 포함된 파일과 SHA-256은 [assets/kenney/manifest.json](assets/kenney/manifest.json)에 기록했습니다. 캐릭터·던전 GLB가 참조하는 `Textures/colormap.png`도 포함되어 있습니다.
 
-**직접 만든 도형:** 드래곤, 두 종류 슬라임, AGENT 로봇, 서버 랙, 화이트보드, 방 구조, 모니터 코드 줄, LED, 균열, 불꽃·스파크는 Three.js 기본 도형으로 제작했습니다. 오거는 Mini Dungeon의 **오크를 확대하고 주황색 의상·복셀 몽둥이를 추가한 변형**입니다. 용사는 Mini Dungeon 인간에 은색 투구, 붉은 깃털, 파란 갑옷을 추가하고 실제 Kenney 검·방패를 사용합니다. 직원 셔츠는 인스턴스별 팔레트 복제로 지정 색을 적용합니다. 원본 GLB는 변경하지 않았습니다.
+**직접 만든 도형:** 드래곤, AGENT 로봇, 서버 랙, 화이트보드, 방 구조, 모니터 코드 줄, LED, 균열, 불꽃·스파크는 Three.js 기본 도형으로 제작했습니다. 오거는 Mini Dungeon의 **오크를 확대하고 주황색 의상·복셀 몽둥이를 추가한 변형**입니다. 용사는 Mini Dungeon 인간에 은색 투구, 붉은 깃털, 파란 갑옷을 추가하고 실제 Kenney 검·방패를 사용합니다. 유령과 직원은 Kenney 원본 모델이며, 직원 셔츠만 인스턴스별 팔레트 복제로 지정 색을 적용합니다. 원본 GLB는 변경하지 않았습니다.
 
 ## 검증
 

@@ -172,5 +172,17 @@
     "file": "Textures/colormap.png",
     "sha256": "bc492d755caf9e64924447f065681be0d5438a33cd0acddc72f3d00fd75893be",
     "bytes": 10838
+  },
+  {
+    "pack": "graveyard-kit",
+    "file": "character-ghost.glb",
+    "sha256": "d4334bc0c7c0ca27924e238b47fe5b0984f4f6bbaeaa55f7e75d0287e8935895",
+    "bytes": 114016
+  },
+  {
+    "pack": "graveyard-kit",
+    "file": "Textures/colormap.png",
+    "sha256": "a94b4dc4f77a4b8aec96bde94f63912a1ce12aa98eec2c1e9a37c89e20a5f091",
+    "bytes": 10965
   }
 ]

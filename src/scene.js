@@ -150,7 +150,7 @@ export class OfficeScene {
     const rows=Math.ceil(count/2),spacing=Math.min(6.7,15/Math.max(1,rows-1));
     issues.forEach((issue,i)=>{
       const actor=monster(issue.grade);actor.root.traverse(n=>{if(n.isMesh)n.material=Array.isArray(n.material)?n.material.map(m=>m.clone()):n.material.clone();});this.scene.add(actor.root);const x=count<=3?23.5+(i%2)*1.1:19.3+(i%2)*7.1;const z=count<=3?7.2+i*6.1:5.5+Math.floor(i/2)*spacing;
-      actor.root.position.set(x,0,z);actor.root.rotation.y=-Math.PI/2;actor.home=actor.root.position.clone();actor.baseScale=actor.root.scale.clone();actor.issue=issue;actor.height=actor.height??5.4;
+      actor.root.position.set(x,actor.hoverHeight??0,z);actor.root.rotation.y=-Math.PI/2;actor.home=actor.root.position.clone();actor.baseScale=actor.root.scale.clone();actor.issue=issue;actor.height=actor.height??5.4;
       if(count>6){const s=Math.max(.48,Math.min(1,Math.sqrt(6/count)));actor.root.scale.multiplyScalar(s);actor.baseScale.copy(actor.root.scale);actor.height*=s;}
       if(actor.mixer)this.mixers.push(actor.mixer);
       this.register(actor,`issue-${issue.id}`,()=>`${issueLabel(issue)} · ${GRADES[issue.grade].ko} · ${targetVersion(issue)}에서 퇴치 예정`);
@@ -170,7 +170,7 @@ export class OfficeScene {
     const renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,preserveDrawingBuffer:true});renderer.setSize(RENDERING.thumbnailSize,RENDERING.thumbnailSize);renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;
     const thumbs={hero:thumbnail(renderer,this.hero.root),pet:thumbnail(renderer,this.pet.root)};
     this.crewActors.forEach((a,i)=>{const model=mini(i,a.data.shirt);model.mixer.update(.2);thumbs[`crew-${i}`]=thumbnail(renderer,model.root);});
-    Object.keys(GRADES).forEach(grade=>{const m=monster(grade);m.mixer?.update(.2);thumbs[grade]=thumbnail(renderer,m.root);});
+    Object.keys(GRADES).forEach(grade=>{const m=monster(grade);m.mixer?.update(.2);thumbs[grade]=thumbnail(renderer,m.root,{scale:grade==='low'?2.6/3.6:1});});
     renderer.dispose();renderer.forceContextLoss();this.thumbnails=thumbs;
   }
   label(className,text,target,height=0){
@@ -319,7 +319,7 @@ export class OfficeScene {
     this.riftCore.material.emissiveIntensity=1.2+Math.sin(t*2.8)*.6;this.riftAura.material.opacity=.12+(Math.sin(t*2.8)+1)*.06;
     const jump=(this.pet.jumpUntil??0)>t?Math.abs(Math.sin(((this.pet.jumpUntil-t)/.85)*Math.PI*2))*1.6:Math.max(0,Math.sin(t*3.2))*.3;this.pet.root.position.y=jump;
     for(const actor of this.monsters){
-      if(actor!==this.battle?.actor){if(actor.kind==='slime'){actor.root.scale.y=actor.baseScale.y*(1+Math.sin(t*2.5+actor.home.z)*.05);actor.root.position.y=Math.max(0,Math.sin(t*2.5+actor.home.z))*.17;}if(actor.kind==='dragon')actor.wings.forEach((w,i)=>w.rotation.z=Math.sin(t*2)*.06*(i?1:-1));}
+      if(actor!==this.battle?.actor){if(actor.kind==='ghost')actor.root.position.y=actor.home.y+Math.sin(t*2+actor.home.z)*.18;if(actor.kind==='dragon')actor.wings.forEach((w,i)=>w.rotation.z=Math.sin(t*2)*.06*(i?1:-1));}
     }
     if(!this.battle&&this.monsters.length&&t>=this.nextBattle)this.startBattle();
     if(this.battle)this.updateBattle();
@@ -337,17 +337,17 @@ export class OfficeScene {
     const type=actor.kind==='dragon'?'breath':'melee';this.battle={actor,type,start:this.elapsed,impact:false,defended:false};this.metrics.combat++;this.metrics[type]++;
     this.nextBattle=this.elapsed+random(2.6,4.2);this.pet.jumpUntil=this.elapsed+.85;this.bubble(this.pet,'삐빅!',1.2,{battle:true});
     const label=issueLabel(actor.issue);this.onLog(`${particle(label)} ${type==='breath'?'브레스를 준비한다':'방어선으로 다가온다'}`,'warn');
-    if(type==='melee'){actor.attackPosition=new THREE.Vector3(12.5,0,14.7);actor.setAction?.('walk');}
+    if(type==='melee'){actor.attackPosition=new THREE.Vector3(12.5,actor.home.y,14.7);actor.setAction?.('walk');}
   }
   updateBattle(){
     const battle=this.battle,actor=battle.actor,t=this.elapsed-battle.start;
     if(battle.type==='melee'){
       if(t<.8){actor.root.position.lerpVectors(actor.home,actor.attackPosition,ease(t/.8));actor.root.rotation.y=Math.atan2(this.hero.home.x-actor.home.x,this.hero.home.z-actor.home.z);}
-      else if(t<1.1){actor.setAction?.('idle');if(actor.club)actor.club.rotation.z=-.22-(t-.8)/.3*1.5;else actor.root.scale.y=actor.baseScale.y*(1-(t-.8)/.3*.35);}
+      else if(t<1.1){actor.setAction?.(actor.kind==='ghost'?'attack-melee-right':'idle');if(actor.club)actor.club.rotation.z=-.22-(t-.8)/.3*1.5;}
       else if(t<1.27){const p=(t-1.1)/.17;this.hero.root.position.x=lerp(this.hero.home.x,10.2,p);this.hero.sword.rotation.z=lerp(-.35,-2.1,p);if(actor.club)actor.club.rotation.z=lerp(-1.72,.4,p);}
       else if(t<2.25){
-        if(!battle.impact){battle.impact=true;this.bubble(this.hero,'반격!',1.3,{battle:true});this.onLog(`MDRM 용사가 ${particle(issueLabel(actor.issue),'을/를')} 밀어냈다`,'good');this.sparks.visible=true;this.sparks.position.set(11.5,2.7,14.7);this.flash(actor,true);}
-        const p=Math.min(1,(t-1.27)/.9);actor.root.position.lerpVectors(actor.attackPosition,actor.home,ease(p));actor.root.position.y=Math.sin(p*Math.PI)*1.1;this.hero.root.position.lerpVectors(new THREE.Vector3(10.2,0,14.7),this.hero.home,ease(Math.min(1,p*1.4)));this.hero.sword.rotation.z=lerp(-2.1,-.35,p);actor.root.scale.copy(actor.baseScale);if(actor.club)actor.club.rotation.z=lerp(.4,-.22,p);
+        if(!battle.impact){battle.impact=true;actor.setAction?.('idle');this.bubble(this.hero,'반격!',1.3,{battle:true});this.onLog(`MDRM 용사가 ${particle(issueLabel(actor.issue),'을/를')} 밀어냈다`,'good');this.sparks.visible=true;this.sparks.position.set(11.5,2.7,14.7);this.flash(actor,true);}
+        const p=Math.min(1,(t-1.27)/.9);actor.root.position.lerpVectors(actor.attackPosition,actor.home,ease(p));actor.root.position.y+=Math.sin(p*Math.PI)*1.1;this.hero.root.position.lerpVectors(new THREE.Vector3(10.2,0,14.7),this.hero.home,ease(Math.min(1,p*1.4)));this.hero.sword.rotation.z=lerp(-2.1,-.35,p);actor.root.scale.copy(actor.baseScale);if(actor.club)actor.club.rotation.z=lerp(.4,-.22,p);
         const st=t-1.27;this.sparks.children.forEach(s=>{s.position.copy(s.userData.velocity).multiplyScalar(st);s.position.y-=st*st*3;s.scale.setScalar(Math.max(.03,.3-st*.4));});if(st>.14)this.flash(actor,false);if(st>.6)this.sparks.visible=false;
       } else this.resetBattle();
     }else{
@@ -414,6 +414,6 @@ export class OfficeScene {
     this.renderer.setRenderTarget(null);this.renderer.setClearColor(0x18152e,0);this.renderer.clear();this.renderer.render(this.blitScene,this.blitCamera);this.updateOverlays();this.frameCount++;
   }
   snapshot(){
-    return {ready:this.ready,view:{zoom:this.zoom,pan:this.viewPan.toArray()},elapsed:this.elapsed,frames:this.frameCount,reduced:this.reduced,hidden:document.hidden,metrics:{...this.metrics},issues:this.monsters.map(a=>({id:a.issue.id,grade:a.issue.grade,position:a.root.position.toArray(),screen:this.project(a.root,a.height*.45)})),crew:this.crewActors.map(a=>({key:a.key,status:a.status,position:a.root.position.toArray(),screen:this.project(a.root,2)})),hero:this.project(this.hero.root,3),pet:this.project(this.pet.root,2),rack:this.project(this.actors.find(a=>a.kind==='rack').root,4),assets:this.assets,target:{width:this.renderTarget.width,height:this.renderTarget.height},viewport:{width:this.width,height:this.height},drawCalls:this.sceneDrawCalls,walkObstacles:this.obstacles.map(({name,object})=>{const b=new THREE.Box3().setFromObject(object);return {name,min:b.min.toArray(),max:b.max.toArray()};})};
+    return {ready:this.ready,view:{zoom:this.zoom,pan:this.viewPan.toArray()},elapsed:this.elapsed,frames:this.frameCount,reduced:this.reduced,hidden:document.hidden,metrics:{...this.metrics},issues:this.monsters.map(a=>({id:a.issue.id,grade:a.issue.grade,kind:a.kind,height:a.height,scale:a.root.scale.toArray(),position:a.root.position.toArray(),screen:this.project(a.root,a.height*.45)})),crew:this.crewActors.map(a=>({key:a.key,status:a.status,position:a.root.position.toArray(),screen:this.project(a.root,2)})),hero:this.project(this.hero.root,3),pet:this.project(this.pet.root,2),rack:this.project(this.actors.find(a=>a.kind==='rack').root,4),assets:this.assets,target:{width:this.renderTarget.width,height:this.renderTarget.height},viewport:{width:this.width,height:this.height},drawCalls:this.sceneDrawCalls,walkObstacles:this.obstacles.map(({name,object})=>{const b=new THREE.Box3().setFromObject(object);return {name,min:b.min.toArray(),max:b.max.toArray()};})};
   }
 }

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
-import { GRADES } from './data.js';
 
 const CACHE = new Map();
 const BOX = new THREE.BoxGeometry(1, 1, 1);
@@ -12,7 +11,7 @@ const FURNITURE = ['desk','chairDesk','computerScreen','computerKeyboard','compu
 const DUNGEON = ['character-human','character-orc','weapon-sword','shield-rectangle','barrel','rocks'];
 export async function loadAssets() {
   const missing=[];const manager=new THREE.LoadingManager();manager.onError=url=>missing.push(url);const loader = new GLTFLoader(manager);
-  const entries = [...CHARACTER_FILES.map(n => ['mini-characters',n]),...FURNITURE.map(n => ['furniture-kit',n]),...DUNGEON.map(n => ['mini-dungeon',n])];
+  const entries = [...CHARACTER_FILES.map(n => ['mini-characters',n]),...FURNITURE.map(n => ['furniture-kit',n]),...DUNGEON.map(n => ['mini-dungeon',n]),['graveyard-kit','character-ghost']];
   await Promise.all(entries.map(async ([pack,name]) => {
     const gltf = await loader.loadAsync(new URL(`../assets/kenney/${pack}/${name}.glb`, import.meta.url).href);
     gltf.scene.traverse(node => {
@@ -26,7 +25,7 @@ export async function loadAssets() {
     CACHE.set(name,gltf);
   }));
   if(missing.length)throw new Error('에셋 파일 누락: '+missing.join(', '));
-  return { files: CACHE.size, characterAnimations: CACHE.get(CHARACTER_FILES[0]).animations.map(a => a.name) };
+  return { files: CACHE.size, characterAnimations: CACHE.get(CHARACTER_FILES[0]).animations.map(a => a.name), ghostAnimations: CACHE.get('character-ghost').animations.map(a => a.name) };
 }
 export function material(color, emissive = false) {
   const key = color + ':' + emissive;
@@ -78,7 +77,7 @@ function recolorClothing(model,index,color) {
 }
 
 export function mini(index=0, shirt, height=4.5, kind='crew') {
-  const filename = kind==='hero' ? 'character-human' : kind==='ogre' ? 'character-orc' : CHARACTER_FILES[index%CHARACTER_FILES.length];
+  const filename = {hero:'character-human',ogre:'character-orc',ghost:'character-ghost'}[kind] ?? CHARACTER_FILES[index%CHARACTER_FILES.length];
   const asset = CACHE.get(filename), root=group(), model=cloneSkeleton(asset.scene); root.add(model);
   const b = new THREE.Box3().setFromObject(model), size=b.getSize(new THREE.Vector3());
   const scale=height/size.y; model.scale.setScalar(scale); model.position.y=-b.min.y*scale;
@@ -123,14 +122,10 @@ export function robot() {
   box(body,.45,.2,.1,'#f5c542',0,1.2,.61,true);
   return {root,body,height:4,kind:'pet'};
 }
-function slime(grade) {
-  const root=group(), color=GRADES[grade].color;
-  const body = new THREE.Mesh(new THREE.SphereGeometry(1.85,10,7),material(color));body.position.y=1.25;body.scale.set(1,.7,1);body.castShadow=true;root.add(body);
-  const feet=group(root);for(const x of [-1.1,0,1.1])box(feet,.95,.4,1.1,color,x,.22,.55);
-  for(const x of [-.65,.65]){box(root,.55,.65,.15,'#f4efe0',x,1.45,1.48);box(root,.23,.38,.12,'#29263e',x-.05,1.4,1.6);}
-  box(root,.45,.16,.1,'#76557d',0,.95,1.77);box(root,.4,.25,.2,'#efe2ff',-.7,2.2,.6);
-  if(grade==='low')root.scale.setScalar(.72);
-  return {root,body,height:grade==='low'?2:2.9,kind:'slime'};
+function ghost(grade) {
+  const actor=mini(0,null,grade==='low'?2.6:3.6,'ghost');
+  actor.hoverHeight=.45;
+  return actor;
 }
 function dragon() {
   const root=group(), body=group(root), red='#d56d83', light='#ff9b9a', dark='#925774';
@@ -157,20 +152,20 @@ function dragon() {
 }
 export function monster(grade) {
   if(grade==='critical')return dragon();
-  if(grade==='low'||grade==='medium')return slime(grade);
+  if(grade==='low'||grade==='medium')return ghost(grade);
   const actor=mini(0,'#f6a050',5.4,'ogre');
   const clubPivot=group(actor.root,-1.7,2.3,.1);
   box(clubPivot,.35,2.5,.35,'#8c5a40',0,.6,0);box(clubPivot,.95,1.4,.95,'#a97854',0,2.1,0);
   for(const y of [1.7,2.3])box(clubPivot,1.03,.14,1.03,'#d7b87a',0,y,0);
   clubPivot.rotation.z=-.22;actor.club=clubPivot;actor.kind='ogre';return actor;
 }
-export function thumbnail(renderer, object, bg='#172461') {
+export function thumbnail(renderer, object, {bg='#172461',scale=1}={}) {
   const thumbScene = new THREE.Scene();thumbScene.background=new THREE.Color(bg);
   thumbScene.add(new THREE.HemisphereLight('#fff1e0','#6d6595',2.25));
   const light=new THREE.DirectionalLight('#ffe6c7',3.4);light.position.set(-25,65,35);thumbScene.add(light);
   const clone=cloneSkeleton(object);clone.position.set(0,0,0);clone.rotation.set(0,0,0);thumbScene.add(clone);clone.updateMatrixWorld(true);
   const b=new THREE.Box3().setFromObject(clone),center=b.getCenter(new THREE.Vector3()),size=b.getSize(new THREE.Vector3());
-  const extent=Math.max(size.y,size.x*.85,size.z*.85)*1.33;
+  const extent=Math.max(size.y,size.x*.85,size.z*.85)*1.33/scale;
   const camera=new THREE.OrthographicCamera(-extent/2,extent/2,extent/2,-extent/2,.1,100);
   camera.position.copy(center).add(new THREE.Vector3(10,10,10));camera.lookAt(center);
   renderer.render(thumbScene,camera);
