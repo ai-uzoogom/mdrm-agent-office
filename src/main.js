@@ -38,6 +38,18 @@ function renderUI(){
  updateCalendar();
 }
 function setCrew(i,status){const el=$(`#crew-status-${i}`);if(!el)return;el.textContent=status;el.classList.toggle('warn',/확인 필요/.test(status));el.classList.toggle('good',/커밋|통과/.test(status));}
+function setView({zoom,canZoomIn,canZoomOut,pan}){
+ $('#zoom-level').value=`${Math.round(zoom*100)}%`;
+ $('#zoom-in').disabled=!canZoomIn;$('#zoom-out').disabled=!canZoomOut;$('#zoom-reset').disabled=!canZoomOut;
+ $('#scene-pan-controls').hidden=!canZoomOut;
+ document.querySelectorAll('[data-pan]').forEach(button=>button.disabled=!pan[button.dataset.pan]);
+}
+function setupViewControls(){
+ $('#zoom-in').addEventListener('click',()=>office.zoomBy(1));
+ $('#zoom-out').addEventListener('click',()=>office.zoomBy(-1));
+ $('#zoom-reset').addEventListener('click',()=>office.resetView());
+ document.querySelectorAll('[data-pan]').forEach(button=>button.addEventListener('click',()=>office.moveView(button.dataset.pan)));
+}
 function setupTabs(){
  const tabs=[...document.querySelectorAll('[role="tab"]')];
  const activate=tab=>{tabs.forEach(other=>{const active=tab===other;other.setAttribute('aria-selected',String(active));other.tabIndex=active?0:-1;document.getElementById(other.getAttribute('aria-controls')).hidden=!active;});};
@@ -53,7 +65,8 @@ function markReady(instance){
 async function start(){
  try{
   renderUI();setupTabs();
-  office=new OfficeScene({canvas:$('#office-canvas'),stage:$('#scene-stage'),overlay:$('#scene-overlays'),onLog:log,onCrew:setCrew,onMotion:text=>{const el=$('#motion-state');el.replaceChildren();const dot=document.createElement('i');dot.className='status-dot';el.append(dot,document.createTextNode(text));},onReady:markReady});
+  office=new OfficeScene({canvas:$('#office-canvas'),stage:$('#scene-stage'),overlay:$('#scene-overlays'),onLog:log,onCrew:setCrew,onView:setView,onMotion:text=>{const el=$('#motion-state');el.replaceChildren();const dot=document.createElement('i');dot.className='status-dot';el.append(dot,document.createTextNode(text));},onReady:markReady});
+  setupViewControls();
   document.addEventListener('click',event=>{const button=event.target.closest('[data-inspect]');if(button&&!button.disabled&&office.ready)office.inspect(button.dataset.inspect);});
   window.addEventListener('office:calendar',updateCalendar);await office.init();
  }catch(error){

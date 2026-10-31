@@ -7,6 +7,7 @@
     "start": "python3 -m http.server 4173 --bind 127.0.0.1",
     "test": "node --test tests/data.test.mjs",
     "test:browser": "node tests/browser.mjs",
+    "test:view": "node tests/view-controls.mjs",
     "test:visibility": "node tests/visibility.mjs",
     "prepare:pages": "node scripts/prepare-pages.mjs"
   },

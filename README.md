@@ -46,13 +46,14 @@ Three.js, GLB, PNG 팔레트와 폰트를 모두 포함했습니다. 실행 중 
 - Three.js **0.160.0**을 로컬 고정하고 `GLTFLoader`, `SkeletonUtils.clone`, `AnimationMixer`를 사용합니다.
 - 60 × 44 월드의 열린 디오라마에 두 벽과 낮은 칸막이, 개발실·회의실·서버실을 배치했습니다.
 - 정사영 카메라의 방위각은 45°, 내려다보는 각도는 약 35.264°입니다.
+- 장면 오른쪽 아래의 `−`·`+` 버튼으로 100~300% 확대·축소하고 `전체`로 초기 화면에 복귀합니다. 확대 후에는 드래그·터치 드래그·방향 버튼으로 이동합니다. 장면에 초점을 두면 `+`·`−`·방향키·`0`(전체 보기)을 사용할 수 있고, Ctrl/Command+휠은 포인터 위치를 기준으로 확대·축소합니다. 일반 휠은 페이지를 스크롤합니다.
 - 화면 크기와 픽셀 밀도(최대 3배)를 반영해 가로 최대 1920px `WebGLRenderTarget`에 먼저 렌더링합니다. 1280px / DPR 2에서는 가로 1752px, 390px / DPR 3에서는 가로 1056px입니다. `NearestFilter`와 CSS `image-rendering: pixelated`를 유지해 세밀한 픽셀 표현을 사용합니다.
 - 안티앨리어싱은 꺼져 있습니다. DirectionalLight 1개, HemisphereLight 1개, `BasicShadowMap`을 사용합니다.
 - 말풍선·이름·등급·벽 라벨·릴리스 보드 제목은 HTML입니다. 벽 표지판과 보드 제목은 해당 3D 객체에 연결된 면의 꼭짓점을 투영해 상자 전체의 위치·기울기·크기를 맞춥니다. 말풍선은 가까운 빈 위치를 찾고 벽 표지판과 보드 제목 영역도 피해 배치합니다.
 - 직원은 모델의 실제 `sit`, `idle`, `walk` 애니메이션을 사용합니다. 보행 속도는 약 2.4 units/s입니다.
 - 근접 전투, 검 휘두르기, 넉백, 스파크, 드래곤 브레스와 방패 동작은 하나의 프레임 시간 기반 상태 머신으로 진행합니다. 별도의 전투 타이머가 백그라운드에서 계속 실행되지 않습니다.
 - 숨김 상태에서는 `requestAnimationFrame`을 취소하고 시뮬레이션 시간이 멈춥니다. 복귀 시 누적된 시간을 한꺼번에 진행하지 않습니다.
-- `prefers-reduced-motion: reduce`에서는 초기 정지 화면과 고정 상태를 표시합니다. 창 크기 변경·상태 조회에 필요한 재렌더만 수행합니다.
+- `prefers-reduced-motion: reduce`에서는 초기 정지 화면과 고정 상태를 표시합니다. 창 크기 변경·상태 조회·화면 확대 및 이동에 필요한 재렌더만 수행합니다.
 - 활동 로그는 최신 7개를 유지하고 새 항목만 `aria-live="polite"`로 알립니다. 상태 버튼으로 키보드 접근도 가능합니다.
 - 탭은 방향키·Home·End를 지원합니다. 썸네일은 동일한 정사영·조명 팔레트로 384 × 384 오프스크린 렌더한 실제 3D 정지 이미지입니다.
 
@@ -86,10 +87,11 @@ Three.js, GLB, PNG 팔레트와 폰트를 모두 포함했습니다. 실행 중 
 npm ci --ignore-scripts
 npm test
 npm run test:browser
+npm run test:view
 npm run test:visibility
 ```
 
-브라우저 테스트는 기본적으로 macOS의 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`을 사용합니다. 다른 환경에서는 `CHROME_PATH`를 지정합니다. 서버 주소는 `OFFICE_URL`로 변경할 수 있습니다. `test:visibility`는 테스트 전용 창에서 보행 경로와 정지·복귀 조건을 검사합니다.
+브라우저 테스트는 기본적으로 macOS의 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`을 사용합니다. 다른 환경에서는 `CHROME_PATH`를 지정합니다. 서버 주소는 `OFFICE_URL`로 변경할 수 있습니다. `test:view`는 확대·이동·리셋, 확대 상태의 캐릭터 클릭과 글자 정렬, 키보드·휠·터치 모사, 작은 화면 배치를 검사합니다. `test:visibility`는 테스트 전용 창에서 보행 경로와 정지·복귀 조건을 검사합니다.
 
 [데스크톱 미리보기](docs/previews/desktop.png) · [모바일 미리보기](docs/previews/mobile.png) · [도감 미리보기](docs/previews/bestiary.png)
 

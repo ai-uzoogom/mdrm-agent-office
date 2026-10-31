@@ -3,13 +3,15 @@ import { PRODUCT, RENDERING, CREW, GRADES, activeIssues, issueLabel, particle, t
 import { loadAssets, box, group, place, prop, mini, hero, robot, monster, material, thumbnail } from './models.js';
 
 const PALETTE={ wall:'#4a4383', partition:'#6a63a8', wood:['#b07c4c','#a06e42'], meeting:['#4d6199','#45578c'], server:['#323e60','#2b3654'] };
+const VIEW={min:1,max:3,step:.25};
 const lerp=THREE.MathUtils.lerp, ease=t=>t*t*(3-2*t), random=(a,b)=>a+Math.random()*(b-a);
 export class OfficeScene {
-  constructor({canvas,stage,overlay,onLog,onCrew,onMotion,onReady}) {
-    Object.assign(this,{canvas,stage,overlay,onLog,onCrew,onMotion,onReady});
+  constructor({canvas,stage,overlay,onLog,onCrew,onView=()=>{},onMotion,onReady}) {
+    Object.assign(this,{canvas,stage,overlay,onLog,onCrew,onView,onMotion,onReady});
     this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.surfaceLabels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.codeLines=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
     this.motionQuery=matchMedia('(prefers-reduced-motion: reduce)');this.reduced=this.motionQuery.matches;this.pointer=new THREE.Vector2();this.raycaster=new THREE.Raycaster();this.projectVector=new THREE.Vector3();this.raf=null;this.ready=false;this.battleCursor=2;
     this.nextCrew=1.6;this.nextLed=.4;this.nextCode=.13;this.nextBattle=1.8;this.nextMeeting=5;this.lastCalendar=0;
+    this.zoom=VIEW.min;this.viewPan=new THREE.Vector2();this.viewFit=null;this.drag=null;this.suppressClick=false;this.navigation=stage.querySelector('.scene-navigation');
   }
   async init(){
     this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:false,alpha:true,powerPreference:'high-performance'});
@@ -197,9 +199,40 @@ export class OfficeScene {
   }
   inspect(key){this.clickHandlers.get(key)?.();}
   installEvents(){
-    this.canvas.addEventListener('pointermove',event=>{this.canvas.classList.toggle('is-pointing',!!this.hit(event));});
+    this.canvas.addEventListener('pointerdown',event=>{
+      if(event.button!==0||this.drag)return;this.suppressClick=false;
+      if(this.zoom<=VIEW.min)return;
+      this.drag={id:event.pointerId,x:event.clientX,y:event.clientY,startX:event.clientX,startY:event.clientY,moved:false};this.canvas.setPointerCapture(event.pointerId);
+    });
+    this.canvas.addEventListener('pointermove',event=>{
+      const drag=this.drag;
+      if(drag&&drag.id===event.pointerId){
+        if(!drag.moved&&Math.hypot(event.clientX-drag.startX,event.clientY-drag.startY)<5)return;
+        drag.moved=true;this.suppressClick=true;this.canvas.classList.add('is-dragging');
+        this.panByPixels(event.clientX-drag.x,event.clientY-drag.y);drag.x=event.clientX;drag.y=event.clientY;return;
+      }
+      this.canvas.classList.toggle('is-pointing',!!this.hit(event));
+    });
+    const endDrag=event=>{
+      if(this.drag?.id!==event.pointerId)return;this.drag=null;this.canvas.classList.remove('is-dragging');
+      if(this.canvas.hasPointerCapture(event.pointerId))this.canvas.releasePointerCapture(event.pointerId);
+    };
+    for(const type of ['pointerup','pointercancel','lostpointercapture'])this.canvas.addEventListener(type,endDrag);
     this.canvas.addEventListener('pointerleave',()=>this.canvas.classList.remove('is-pointing'));
-    this.canvas.addEventListener('click',event=>{const actor=this.hit(event);if(actor)this.describe(actor);});
+    this.canvas.addEventListener('click',event=>{if(this.suppressClick){this.suppressClick=false;return;}const actor=this.hit(event);if(actor)this.describe(actor);});
+    this.canvas.addEventListener('wheel',event=>{
+      if(!event.ctrlKey&&!event.metaKey)return;event.preventDefault();
+      const rect=this.canvas.getBoundingClientRect(),unit=event.deltaMode===1?16:event.deltaMode===2?this.height:1;
+      this.setZoom(this.zoom*Math.exp(-event.deltaY*unit*.002),{x:(event.clientX-rect.left)/rect.width,y:(event.clientY-rect.top)/rect.height});
+    },{passive:false});
+    this.canvas.addEventListener('keydown',event=>{
+      if(event.ctrlKey||event.metaKey||event.altKey)return;
+      if(['+','='].includes(event.key))this.zoomBy(1);
+      else if(['-','_'].includes(event.key))this.zoomBy(-1);
+      else if(event.key==='0'||event.key==='Home')this.resetView();
+      else if(this.zoom>VIEW.min&&event.key.startsWith('Arrow'))this.moveView(event.key.slice(5).toLowerCase());
+      else return;event.preventDefault();
+    });
     document.addEventListener('visibilitychange',()=>this.updateMotion());
     window.addEventListener('resize',()=>this.resize());
     this.motionQuery.addEventListener('change',event=>{this.reduced=event.matches;if(this.reduced){this.resetBattle();this.bubbles.forEach(b=>{b.fixed=true;b.el.hidden=false;});this.crewActors.forEach(a=>this.bubble(a,a.status,3,{fixed:true}));}else this.bubbles.forEach(b=>{b.fixed=false;b.until=this.elapsed+3;});this.updateMotion();});
@@ -222,12 +255,38 @@ export class OfficeScene {
     const minX=Math.min(...coords.map(p=>p.x)),maxX=Math.max(...coords.map(p=>p.x)),minY=Math.min(...coords.map(p=>p.y)),maxY=Math.max(...coords.map(p=>p.y));
     const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
     const w=(maxX-minX)*1.08,h=(maxY-minY)*1.10,viewH=Math.max(h,w/aspect),viewW=viewH*aspect;
-    this.camera.left=cx-viewW/2;this.camera.right=cx+viewW/2;this.camera.top=cy+viewH/2;this.camera.bottom=cy-viewH/2;this.camera.updateProjectionMatrix();
+    this.viewFit={cx,cy,width:viewW,height:viewH};
     const pixelRatio=Math.min(window.devicePixelRatio||1,RENDERING.maxPixelRatio);
     this.renderer.setPixelRatio(pixelRatio);this.renderer.setSize(this.width,this.height,false);
     const renderWidth=Math.min(RENDERING.maxSceneWidth,Math.round(this.width*pixelRatio));
     this.renderTarget.setSize(renderWidth,Math.max(1,Math.round(renderWidth/aspect)));
-    this.render();
+    this.applyView();
+  }
+  applyView(){
+    if(!this.viewFit)return;
+    const fit=this.viewFit,maxX=fit.width*(1-1/this.zoom)/2,maxY=fit.height*(1-1/this.zoom)/2;
+    this.viewPan.x=THREE.MathUtils.clamp(this.viewPan.x,-maxX,maxX);this.viewPan.y=THREE.MathUtils.clamp(this.viewPan.y,-maxY,maxY);
+    const cx=fit.cx+this.viewPan.x,cy=fit.cy+this.viewPan.y;
+    this.camera.left=cx-fit.width/2;this.camera.right=cx+fit.width/2;this.camera.top=cy+fit.height/2;this.camera.bottom=cy-fit.height/2;this.camera.zoom=this.zoom;this.camera.updateProjectionMatrix();
+    this.canvas.classList.toggle('is-zoomed',this.zoom>VIEW.min);
+    this.onView({zoom:this.zoom,canZoomIn:this.zoom<VIEW.max,canZoomOut:this.zoom>VIEW.min,pan:{left:this.viewPan.x>-maxX+.001,right:this.viewPan.x<maxX-.001,up:this.viewPan.y<maxY-.001,down:this.viewPan.y>-maxY+.001}});
+    if(!document.hidden)this.render();
+  }
+  setZoom(value,anchor={x:.5,y:.5}){
+    if(!this.ready||!this.viewFit)return;
+    const next=THREE.MathUtils.clamp(value,VIEW.min,VIEW.max),delta=1/this.zoom-1/next;
+    this.viewPan.x+=(anchor.x-.5)*this.viewFit.width*delta;this.viewPan.y+=(.5-anchor.y)*this.viewFit.height*delta;
+    this.zoom=next;this.applyView();
+  }
+  zoomBy(steps){this.setZoom(Math.round((this.zoom+steps*VIEW.step)*100)/100);}
+  resetView(){this.viewPan.set(0,0);this.setZoom(VIEW.min);}
+  panByPixels(x,y){
+    if(!this.ready||!this.viewFit||this.zoom<=VIEW.min)return;
+    this.viewPan.x-=x*this.viewFit.width/(this.width*this.zoom);this.viewPan.y+=y*this.viewFit.height/(this.height*this.zoom);this.applyView();
+  }
+  moveView(direction){
+    const movement={left:[1,0],right:[-1,0],up:[0,1],down:[0,-1]}[direction];
+    if(movement)this.panByPixels(movement[0]*this.width*.18,movement[1]*this.height*.18);
   }
   updateMotion(){
     if(this.raf)cancelAnimationFrame(this.raf);this.raf=null;this.lastTime=null;
@@ -315,6 +374,10 @@ export class OfficeScene {
   }
   updateOverlays(){
     const occupied=[];
+    if(this.navigation){
+      const w=this.navigation.offsetWidth,h=this.navigation.offsetHeight;
+      occupied.push({x:this.navigation.offsetLeft+w/2,y:this.navigation.offsetTop+h,w,h});
+    }
     for(const entry of this.labels){const p=this.project(entry.target,entry.height);entry.el.style.transform=`translate(${Math.round(p.x)}px,${Math.round(p.y)}px) translate(-50%,-100%)`;}
     for(const entry of this.surfaceLabels){
       const [tl,tr,bl]=entry.corners.map(p=>this.project(entry.point.copy(p).applyMatrix4(entry.anchor.matrixWorld)));
@@ -328,7 +391,11 @@ export class OfficeScene {
     }
     // Keep balloons near actors while leaving wall signs and the board heading readable.
     for(const entry of this.bubbles){
-      if(entry.el.hidden)continue;const p=this.project(entry.target,entry.height);const w=Math.min(this.width-14,entry.el.offsetWidth),h=entry.el.offsetHeight;
+      if(entry.el.hidden)continue;
+      const center=this.project(entry.actor.root,(entry.actor.height??4.5)/2);
+      const outside=this.zoom>VIEW.min&&(center.x<0||center.x>this.width||center.y<0||center.y>this.height);
+      entry.el.style.visibility=outside?'hidden':'';if(outside)continue;
+      const p=this.project(entry.target,entry.height);const w=Math.min(this.width-14,entry.el.offsetWidth),h=entry.el.offsetHeight;
       const baseX=Math.max(w/2+6,Math.min(this.width-w/2-6,p.x)),baseY=Math.max(h+8,p.y);
       let best={x:baseX,y:baseY,score:Infinity};
       for(const dy of [0,-h-8,h+8,-2*(h+8)])for(const dx of [0,-w*.65,w*.65,-w,w,-w*1.5,w*1.5]){
@@ -347,6 +414,6 @@ export class OfficeScene {
     this.renderer.setRenderTarget(null);this.renderer.setClearColor(0x18152e,0);this.renderer.clear();this.renderer.render(this.blitScene,this.blitCamera);this.updateOverlays();this.frameCount++;
   }
   snapshot(){
-    return {ready:this.ready,elapsed:this.elapsed,frames:this.frameCount,reduced:this.reduced,hidden:document.hidden,metrics:{...this.metrics},issues:this.monsters.map(a=>({id:a.issue.id,grade:a.issue.grade,position:a.root.position.toArray(),screen:this.project(a.root,a.height*.45)})),crew:this.crewActors.map(a=>({key:a.key,status:a.status,position:a.root.position.toArray(),screen:this.project(a.root,2)})),hero:this.project(this.hero.root,3),pet:this.project(this.pet.root,2),rack:this.project(this.actors.find(a=>a.kind==='rack').root,4),assets:this.assets,target:{width:this.renderTarget.width,height:this.renderTarget.height},viewport:{width:this.width,height:this.height},drawCalls:this.sceneDrawCalls,walkObstacles:this.obstacles.map(({name,object})=>{const b=new THREE.Box3().setFromObject(object);return {name,min:b.min.toArray(),max:b.max.toArray()};})};
+    return {ready:this.ready,view:{zoom:this.zoom,pan:this.viewPan.toArray()},elapsed:this.elapsed,frames:this.frameCount,reduced:this.reduced,hidden:document.hidden,metrics:{...this.metrics},issues:this.monsters.map(a=>({id:a.issue.id,grade:a.issue.grade,position:a.root.position.toArray(),screen:this.project(a.root,a.height*.45)})),crew:this.crewActors.map(a=>({key:a.key,status:a.status,position:a.root.position.toArray(),screen:this.project(a.root,2)})),hero:this.project(this.hero.root,3),pet:this.project(this.pet.root,2),rack:this.project(this.actors.find(a=>a.kind==='rack').root,4),assets:this.assets,target:{width:this.renderTarget.width,height:this.renderTarget.height},viewport:{width:this.width,height:this.height},drawCalls:this.sceneDrawCalls,walkObstacles:this.obstacles.map(({name,object})=>{const b=new THREE.Box3().setFromObject(object);return {name,min:b.min.toArray(),max:b.max.toArray()};})};
   }
 }
