@@ -13,7 +13,7 @@
 <main class="grid">
 <article><h2>대기</h2><p>투구·갑옷 맞춤<br>손에 연결된 검과 방패</p><canvas id="idle"></canvas></article>
 <article><h2>반격</h2><p>팔과 함께 검 휘두르기<br>손잡이는 손에 고정</p><canvas id="attack"></canvas></article>
-<article><h2>방어</h2><p>왼팔을 앞으로 들어 올리기<br>방패도 같은 관절을 따라 이동</p><canvas id="guard"></canvas></article>
+<article><h2>방어</h2><p>투구 정면으로 방패 내밀기<br>방패 면으로 브레스 막기</p><canvas id="guard"></canvas></article>
 <article><h2>일정 독려</h2><p>“커밋 준비됐나요?”<br>입 앞으로 가져온 확성기</p><canvas id="coordinator"></canvas></article>
 </main>
 <p class="foot">독립 렌더 검증 화면입니다. 사무실에서도 동일한 모델·장비·동작을 사용합니다.</p>
@@ -50,7 +50,13 @@ for(const yaw of [0,Math.PI/2,-Math.PI/2])for(let i=0;i<30;i++){
  coordinator.root.rotation.y=yaw;coordinator.root.position.set(4,0,-6);coordinator.mixer.update(1/30);coordinator.setEncouragementPose(i/30,true);coordinator.root.updateMatrixWorld(true);
  mouthSamples.push({gap:coordinator.mouth.getWorldPosition(new THREE.Vector3()).distanceTo(coordinator.mouthpiece.getWorldPosition(new THREE.Vector3())),hand:coordinator.phone.position.toArray(),armScale:coordinator.bones['arm-right'].scale.toArray()});
 }
-window.__CHARACTER_REVIEW__={reports,anchors,frames,mouthSamples,handAnchor,armScale,headVisible:animated.model.getObjectByName('head-mesh').visible,swordParent:animated.sword.parent.name,shieldParent:animated.shield.parent.name,female:coordinator.filename,phoneParent:coordinator.phone.parent.name,waves:coordinator.waves.visible};
+const guardSamples=[];
+for(const yaw of [0,Math.PI/2,-Math.PI/2]){
+ const a=heroes[2];a.root.rotation.y=yaw;a.setEquipmentPose(0,1);a.root.updateMatrixWorld(true);
+ const visor=a.shield.worldToLocal(a.visor.getWorldPosition(new THREE.Vector3()));
+ guardSamples.push({visor:visor.toArray(),forward:new THREE.Vector3(0,0,1).applyQuaternion(a.shield.getWorldQuaternion(new THREE.Quaternion())).dot(new THREE.Vector3(0,0,1).applyQuaternion(a.model.getWorldQuaternion(new THREE.Quaternion()))),armScale:a.bones['arm-left'].scale.toArray()});
+}
+window.__CHARACTER_REVIEW__={reports,anchors,frames,mouthSamples,guardSamples,handAnchor,armScale,headVisible:animated.model.getObjectByName('head-mesh').visible,swordParent:animated.sword.parent.name,shieldParent:animated.shield.parent.name,female:coordinator.filename,phoneParent:coordinator.phone.parent.name,waves:coordinator.waves.visible};
 await document.fonts.ready;document.documentElement.dataset.reviewReady='true';
 </script>
 </html>

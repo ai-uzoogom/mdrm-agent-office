@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PRODUCT, RENDERING, CREW, GRADES, activeIssues, issueLabel, particle, targetVersion, dDay } from './data.js';
-import { loadAssets, box, group, place, prop, mini, crewCharacter, hero, robot, monster, material, thumbnail } from './models.js';
+import { loadAssets, box, group, place, prop, mini, crewCharacter, seatAtKeyboard, hero, robot, monster, material, thumbnail } from './models.js';
+import { attachDisplay } from './displays.js';
 
 const PALETTE={ wall:'#4a4383', partition:'#6a63a8', wood:['#b07c4c','#a06e42'], meeting:['#4d6199','#45578c'], server:['#323e60','#2b3654'] };
 const VIEW={min:1,max:3,step:.25};
@@ -8,7 +9,7 @@ const lerp=THREE.MathUtils.lerp, ease=t=>t*t*(3-2*t), random=(a,b)=>a+Math.rando
 export class OfficeScene {
   constructor({canvas,stage,overlay,onLog,onCrew,onView=()=>{},onMotion,onReady}) {
     Object.assign(this,{canvas,stage,overlay,onLog,onCrew,onView,onMotion,onReady});
-    this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0,encourage:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.surfaceLabels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.codeLines=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
+    this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0,encourage:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.surfaceLabels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.displays=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
     this.motionQuery=matchMedia('(prefers-reduced-motion: reduce)');this.reduced=this.motionQuery.matches;this.pointer=new THREE.Vector2();this.raycaster=new THREE.Raycaster();this.projectVector=new THREE.Vector3();this.raf=null;this.ready=false;this.battleCursor=2;
     this.nextCrew=1.6;this.nextLed=.4;this.nextCode=.13;this.nextBattle=1.8;this.nextMeeting=5;this.lastCalendar=0;
     this.zoom=VIEW.min;this.viewPan=new THREE.Vector2();this.viewFit=null;this.drag=null;this.suppressClick=false;this.navigation=stage.querySelector('.scene-navigation');
@@ -67,9 +68,12 @@ export class OfficeScene {
     this.addProp('rugRectangle',{h:.12,w:5.8,d:7},-25.2,.12,-4);
     for(const [x,z,h] of [[-27,18,5],[1,-19,4.7],[28,-19.8,4.5],[7,-18,3.9]])this.addProp('pottedPlant',{h},x,0,z);
     this.addProp('table',{h:3.3,w:11,d:6.5},18,0,-8.5);
-    this.addProp('laptop',{h:1.55,w:2.6,d:2.2},18,3.3,-7.6,Math.PI);
+    this.meetingLaptop=this.addProp('laptop',{h:1.55,w:2.6,d:2.2},18,3.3,-6.4);
+    this.meetingDisplay=attachDisplay(this.meetingLaptop,'laptop',{color:'#c79bff'});this.meetingDisplay.update(0,'일정 점검');this.displays.push(this.meetingDisplay);
     box(room,2,.07,1.4,'#e5e4d8',14.6,3.4,-8.1);box(room,1.5,.07,1,'#c79bff',21,3.4,-9.5);
-    for(const [x,z,rot] of [[11.1,-8.5,-Math.PI/2],[24.8,-8.5,Math.PI/2],[18,-3.7,0],[18,-13,Math.PI]])this.addProp('chairCushion',{h:3.7,w:2.6,d:2.8},x,0,z,rot);
+    for(const [x,z,rot] of [[11.1,-8.5,-Math.PI/2],[24.8,-8.5,Math.PI/2],[18,-3.7,0],[18,-13,Math.PI]]){
+      const chair=this.addProp('chairCushion',{h:rot===0?4:3.7,w:2.6,d:2.8},x,0,z,rot);if(rot===0)this.meetingChair=chair;
+    }
     const board=group(room,18.2,7.1,-21);
     box(board,15.8,6.3,.4,'#34334f',0,0,-.3);box(board,15.1,5.6,.22,'#f4efe0');
     box(board,15.7,.2,.8,'#aaa8b8',0,-3.15,.2);
@@ -90,17 +94,13 @@ export class OfficeScene {
       const actor=crewCharacter(person,i);this.scene.add(actor.root);this.mixers.push(actor.mixer);actor.index=i;actor.statusIndex=0;actor.status=person.statuses?.[0]??person.stops[0];actor.data=person;
       if(!person.walker){
         const [x,z]=desks[i];this.addProp('desk',{h:3.15,w:8.7,d:3.7},x,0,z,Math.PI);
-        this.addProp('computerScreen',{h:2.45,w:3.7,d:.95},x,3.15,z-.6);
-        const screen=group(this.scene,x,4.6,z-.09);box(screen,3.1,1.65,.05,'#182f42',0,0,0);box(screen,3.15,.15,.06,person.screen,0,.8,.02,true);
-        for(let line=0;line<5;line++){
-          const l=box(screen,random(.6,2.3),.1,.06,person.screen,-.3, .48-line*.26,.04,true);this.codeLines.push({mesh:l,crew:i,seed:Math.random()});
-        }
-        this.addProp('computerKeyboard',{h:.13,w:2.8,d:.9},x,3.2,z+.95);
+        actor.monitor=this.addProp('computerScreen',{h:2.45,w:3.7,d:.95},x,3.15,z-.6);
+        actor.display=attachDisplay(actor.monitor,'computerScreen',{color:person.screen,seed:i});actor.display.update(0,actor.status);this.displays.push(actor.display);
+        actor.keyboard=this.addProp('computerKeyboard',{h:.13,w:2.8,d:.9},x,3.2,z+.95);
         this.addProp('computerMouse',{h:.18,w:.5,d:.7},x+2,3.2,z+.95);
         this.mug(this.scene,x+3.1,3.2,z+.6,'#e9dbbe');
-        this.addProp('chairDesk',{h:3.3,w:2.5,d:2.5},x,0,z+3,Math.PI);
-        actor.root.position.set(x,.5,z+3);actor.root.rotation.y=Math.PI;actor.setAction('sit');actor.mixer.update(.02);
-        actor.baseY=.5;actor.typingPose={head:actor.bones.head?.rotation.x,left:actor.bones['arm-left']?.rotation.x,right:actor.bones['arm-right']?.rotation.x};
+        seatAtKeyboard(actor,{x,z:z+2,seatY:1.7,keyY:3.33,keyZ:z+.95,phase:i*1.7});
+        actor.chair=this.addProp('chairDesk',{h:4.1,w:2.5,d:2.5},x,0,actor.root.position.z,Math.PI);
         if(i===0||i===2)this.addProp('plantSmall1',{h:.9},x-3.3,3.2,z-.1);
       } else if(i===4){
         actor.path=[{x:22,z:-17.1,stop:0},{x:27.9,z:-17.1},{x:27.9,z:-8.1,stop:1},{x:27.9,z:-17.1}];actor.root.position.set(22,0,-17.1);actor.pathIndex=1;actor.wait=.45;
@@ -115,7 +115,7 @@ export class OfficeScene {
       this.label('name-label',person.role,actor.root,5.15);
       this.onCrew(i,actor.status);this.bubble(actor,actor.status,4.5,{fixed:this.reduced});
     });
-    const meeting=mini(1,'#5263a4',4.3);this.scene.add(meeting.root);meeting.root.position.set(18,.4,-3.3);meeting.root.rotation.y=Math.PI;meeting.setAction('sit');meeting.mixer.update(.02);this.mixers.push(meeting.mixer);this.meeting=meeting;
+    const meeting=mini(1,'#5263a4',4.5);this.scene.add(meeting.root);seatAtKeyboard(meeting,{x:18,z:-4.2,seatY:1.85,keyY:3.43,keyZ:-5.85,spread:.48,phase:2.1});this.meetingChair.position.z=meeting.root.position.z;this.mixers.push(meeting.mixer);this.meeting=meeting;
     this.register(meeting,'meeting',()=>`v${PRODUCT.next} 일정 점검 · 이슈 ${activeIssues().length}건 확인`);
     this.bubble(meeting,`v${PRODUCT.next} 일정 점검`,4,{fixed:this.reduced});
   }
@@ -308,15 +308,14 @@ export class OfficeScene {
     const t=this.elapsed;this.mixers.forEach(m=>m.update(dt));
     this.crewActors.forEach(actor=>{
       if(actor.data.walker){this.walk(actor,dt);actor.setEncouragementPose?.(t,actor.wait>0);}
-      else if(actor.status.includes('타이핑')){
-        if(actor.bones.head)actor.bones.head.rotation.x=actor.typingPose.head+Math.sin(t*7+actor.index)*.045;
-        if(actor.bones['arm-left'])actor.bones['arm-left'].rotation.x=actor.typingPose.left+Math.sin(t*14)*.05;
-        if(actor.bones['arm-right'])actor.bones['arm-right'].rotation.x=actor.typingPose.right-Math.sin(t*14)*.05;
+      else{
+        actor.setTypingPose(t,actor.status);
         this.metrics.typing++;
       }
     });
+    this.meeting.setTypingPose(t,'일정 점검');
     if(t>=this.nextCrew){this.nextCrew=t+random(1.6,2.8);const actor=this.crewActors[Math.floor(Math.random()*4)];actor.statusIndex=(actor.statusIndex+1)%actor.data.statuses.length;actor.status=actor.data.statuses[actor.statusIndex];this.onCrew(actor.index,actor.status);this.bubble(actor,actor.status);this.onLog(`${actor.data.role} · ${actor.status}`,/확인 필요/.test(actor.status)?'warn':/커밋|통과/.test(actor.status)?'good':'');}
-    if(t>=this.nextCode){this.nextCode=t+.14;this.codeLines.forEach(line=>{if(this.crewActors[line.crew].status.includes('타이핑'))line.mesh.scale.x=random(.5,2.6);});}
+    if(t>=this.nextCode){this.nextCode=t+.14;this.crewActors.forEach(actor=>actor.display?.update(t,actor.status));this.meetingDisplay.update(t,'일정 점검');}
     if(t>=this.nextLed){this.nextLed=t+.4;this.metrics.led++;this.leds.forEach(led=>{const r=Math.random(),color=r<.78?'#4fd16b':r<.87?'#f5c542':r<.97?'#4fb3ff':'#ff8a86';led.material.color.set(color);led.material.emissive.set(color);led.material.emissiveIntensity=Math.random()>.12?1.4:.15;});}
     if(t>=this.nextMeeting){this.nextMeeting=t+random(6,9);const options=[`${PRODUCT.next} 일정 점검`,`이슈 ${activeIssues().length}건 확인`,`발행 ${dDay()}`];const text=options[Math.floor(t)%options.length];this.bubble(this.meeting,text);this.onLog(`회의실 · ${text}`);}
     this.riftCore.material.emissiveIntensity=1.2+Math.sin(t*2.8)*.6;this.riftAura.material.opacity=.12+(Math.sin(t*2.8)+1)*.06;
@@ -355,10 +354,10 @@ export class OfficeScene {
         const st=t-1.27;this.sparks.children.forEach(s=>{s.position.copy(s.userData.velocity).multiplyScalar(st);s.position.y-=st*st*3;s.scale.setScalar(Math.max(.03,.3-st*.4));});if(st>.14)this.flash(actor,false);if(st>.6)this.sparks.visible=false;
       } else this.resetBattle();
     }else{
-      actor.mouth.getWorldPosition(this.projectVector);const origin=this.projectVector.clone(),target=this.hero.root.position.clone().add(new THREE.Vector3(0,2.7,0));
+      this.hero.setEquipmentPose(0,Math.min(1,t/.55));this.hero.root.updateMatrixWorld(true);
+      actor.mouth.getWorldPosition(this.projectVector);const origin=this.projectVector.clone(),target=this.hero.shieldImpact.getWorldPosition(new THREE.Vector3());
       let growth=t<.8?t/.8:t<1.5?1:Math.max(0,1-(t-1.5)/.55);
       this.flame.visible=growth>0;this.flame.children.forEach((f,i)=>{const p=(i+1)/this.flame.children.length;f.visible=p<=growth;f.position.lerpVectors(origin,target,p);f.position.y+=Math.sin(this.elapsed*17+i*2)*.15;const size=.35+p*.6;f.scale.set(size,size*(.7+Math.sin(this.elapsed*19+i)*.2),size);});
-      this.hero.setEquipmentPose(0,Math.min(1,t/.55));
       if(t>=.7&&!battle.defended){battle.defended=true;this.bubble(this.hero,'방어!',1.3,{battle:true});this.onLog(`MDRM 용사가 ${issueLabel(actor.issue)}의 브레스를 막았다`,'good');}
       if(t>=2.05)this.resetBattle();
     }

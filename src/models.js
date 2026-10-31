@@ -101,7 +101,8 @@ function handMount(actor,side) {
     if(!mesh.isSkinnedMesh)return;
     const joint=mesh.skeleton.bones.indexOf(bone);if(joint<0)return;
     const {position,skinIndex,skinWeight}=mesh.geometry.attributes;
-    for(let i=0;i<position.count;i++)for(let k=0;k<4;k++){
+    const indices=mesh.geometry.index?new Set(mesh.geometry.index.array):Array.from({length:position.count},(_,i)=>i);
+    for(const i of indices)for(let k=0;k<4;k++){
       if(skinIndex.getComponent(i,k)!==joint||skinWeight.getComponent(i,k)<.9)continue;
       point.fromBufferAttribute(position,i).applyMatrix4(mesh.bindMatrix).applyMatrix4(mesh.skeleton.boneInverses[joint]);points.push(point.clone());break;
     }
@@ -109,16 +110,66 @@ function handMount(actor,side) {
   const reach=Math.max(...points.map(p=>Math.abs(p.x)));
   const hand=new THREE.Box3().setFromPoints(points.filter(p=>Math.abs(p.x)>reach*.65)).getCenter(new THREE.Vector3());
   const mount=group(bone);mount.position.copy(hand);mount.name=`${side}-hand-grip`;
+  mount.userData.fingertips=points.filter(p=>Math.abs(p.x)>reach*.78);
   actor.root.updateMatrixWorld(true);
   const frame=actor.model.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(bone.getWorldQuaternion(new THREE.Quaternion()));
   mount.quaternion.copy(frame.invert());
   return mount;
+}
+function clearHandTools(actor){
+  if(actor.filename!=='character-female-a'||actor.handToolsCleared)return;
+  // This original character carries two tools in the body primitive. Remove
+  // only their indexed faces for the office instance, retaining hands/clothes.
+  actor.model.traverse(mesh=>{
+    if(!mesh.isSkinnedMesh||!mesh.name.includes('body'))return;
+    const geometry=mesh.geometry,indices=geometry.index.array,{uv,skinIndex,skinWeight}=geometry.attributes;
+    const arms=['left','right'].map(side=>mesh.skeleton.bones.indexOf(actor.bones[`arm-${side}`]));
+    const tool=i=>[7,11].includes(Math.floor(uv.getX(i)*16))&&[0,1,2,3].some(k=>arms.includes(skinIndex.getComponent(i,k))&&skinWeight.getComponent(i,k)>.9);
+    const kept=[];for(let i=0;i<indices.length;i+=3)if(![indices[i],indices[i+1],indices[i+2]].every(tool))kept.push(indices[i],indices[i+1],indices[i+2]);
+    mesh.geometry=geometry.clone();mesh.geometry.setIndex(kept);mesh.geometry.computeBoundingSphere();
+  });actor.handToolsCleared=true;
 }
 function faceInModelSpace(actor,mount,x=0,y=0,z=0) {
   actor.root.updateMatrixWorld(true);
   const modelFrame=actor.model.getWorldQuaternion(new THREE.Quaternion()).invert();
   const boneFrame=mount.parent.getWorldQuaternion(new THREE.Quaternion());
   mount.quaternion.copy(modelFrame.multiply(boneFrame).invert()).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)));
+}
+export function seatAtKeyboard(actor,{x,z,seatY,keyY,keyZ,spread=.62,phase=0}){
+  clearHandTools(actor);
+  actor.root.position.set(x,0,z);actor.root.rotation.y=Math.PI;actor.setAction('sit');actor.mixer.update(.02);actor.root.updateMatrixWorld(true);
+  actor.root.position.y+=seatY-actor.bones.torso.getWorldPosition(new THREE.Vector3()).y;
+  const hands=['left','right'].map(side=>handMount(actor,side));
+  const arms=hands.map(hand=>({hand,bone:hand.parent,rest:hand.parent.quaternion.clone(),direction:hand.position.clone().applyQuaternion(hand.parent.quaternion).normalize()}));
+  const target=new THREE.Vector3(),shoulder=new THREE.Vector3(),correction=new THREE.Quaternion();
+  actor.root.updateMatrixWorld(true);
+  const first=arms[0],reach=first.hand.getWorldPosition(target).distanceTo(first.bone.getWorldPosition(shoulder));
+  const distance=Math.sqrt(Math.max(.2,reach*reach-(keyY+.34-shoulder.y)**2));
+  actor.root.position.z+=keyZ+distance-shoulder.z;
+  actor.root.updateMatrixWorld(true);arms.forEach(a=>{a.reach=a.hand.getWorldPosition(target).distanceTo(a.bone.getWorldPosition(shoulder));});
+  const fingertip=new THREE.Vector3();
+  const headRest=actor.bones.head.quaternion.clone(),nod=new THREE.Quaternion(),axis=new THREE.Vector3(1,0,0);
+  actor.hands=Object.fromEntries(hands.map((hand,i)=>[['left','right'][i],hand]));
+  actor.setTypingPose=(time,status='타이핑…')=>{
+    const busy=/타이핑|검수/.test(status),speed=busy?12:7,amplitude=busy?.23:.15;
+    actor.root.updateMatrixWorld(true);
+    arms.forEach(({hand,bone,rest,direction,reach},i)=>{
+      const beat=time*speed+phase+i*Math.PI;
+      const handX=x+(i===0?-spread:spread)+Math.sin(beat*.55)*.09,tap=(1+Math.sin(beat))*amplitude/2;
+      let handY=keyY+.34+tap;bone.getWorldPosition(shoulder);
+      // The fixed shoulder-to-hand radius gives the forward coordinate. Refine
+      // palm height so different gloves all tap just above the real key tops.
+      for(let pass=0;pass<3;pass++){
+        const dx=handX-shoulder.x,dy=handY-shoulder.y;
+        target.set(handX,handY,shoulder.z-Math.sqrt(Math.max(.02,reach*reach-dx*dx-dy*dy)));
+        bone.parent.worldToLocal(target).sub(bone.position).normalize();
+        correction.setFromUnitVectors(direction,target);bone.quaternion.copy(rest).premultiply(correction);bone.updateWorldMatrix(true,false);
+        const bottom=Math.min(...hand.userData.fingertips.map(p=>fingertip.copy(p).applyMatrix4(bone.matrixWorld).y));handY+=keyY+.025+tap-bottom;
+      }
+    });
+    actor.bones.head.quaternion.copy(headRest).multiply(nod.setFromAxisAngle(axis,Math.sin(time*2.8+phase)*.035));
+  };
+  actor.setTypingPose(0);return actor;
 }
 export function hero() {
   const actor=mini(0,null,5.3,'hero'); const {bones}=actor;
@@ -142,17 +193,24 @@ export function hero() {
   box(shieldPivot,.14,.20,.018,'#4168bd',0,.035,.124);
   box(shieldPivot,.024,.12,.012,'#f5c542',0,.035,.139);box(shieldPivot,.09,.024,.012,'#f5c542',0,.055,.140);
   const rest={right:bones['arm-right'].quaternion.clone(),left:bones['arm-left'].quaternion.clone()};
+  const guardAim=group(head,0,.085,.19),guardDirection=shieldPivot.position.clone().applyQuaternion(rest.left).normalize();
+  const guardTarget=new THREE.Vector3(),guardRotation=new THREE.Quaternion();
+  actor.shieldImpact=group(shieldPivot,0,.035,.15);actor.visor=group(head,0,.19,.252);
   actor.setEquipmentPose=(swing=0,guard=0)=>{
     bones['arm-right'].quaternion.copy(rest.right);bones['arm-right'].rotateY(.9*swing);bones['arm-right'].rotateZ(-.55*swing);
-    bones['arm-left'].quaternion.copy(rest.left);bones['arm-left'].rotateY(-.7*guard);bones['arm-left'].rotateZ(1.05*guard);
+    const arm=bones['arm-left'];arm.quaternion.copy(rest.left);
+    if(guard>0){
+      actor.root.updateMatrixWorld(true);guardAim.getWorldPosition(guardTarget);arm.parent.worldToLocal(guardTarget).sub(arm.position).normalize();
+      guardRotation.setFromUnitVectors(guardDirection,guardTarget).multiply(rest.left);arm.quaternion.slerp(guardRotation,guard);
+    }
     // Aim the blade into the invasion lane while retaining the grip on the hand.
     faceInModelSpace(actor,swordPivot,1.65*swing,0,.18);
-    faceInModelSpace(actor,shieldPivot,-.12*guard,-.2*guard,0);
+    faceInModelSpace(actor,shieldPivot);
   };
   actor.sword=swordPivot;actor.shield=shieldPivot;return actor;
 }
 export function crewCharacter(person,index) {
-  if(person.behavior!=='encourage')return mini(index,person.shirt);
+  if(person.behavior!=='encourage'){const actor=mini(index,person.shirt);if(!person.walker)clearHandTools(actor);return actor;}
   const actor=mini(0,null,4.5,'coordinator'),phone=handMount(actor,'right');
   box(phone,.045,.10,.05,'#4166bb',0,.025,0);
   const horn=new THREE.Mesh(new THREE.CylinderGeometry(.115,.055,.19,8),material('#f5c542'));

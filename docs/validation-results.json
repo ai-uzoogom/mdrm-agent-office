@@ -1220,5 +1220,766 @@
       ],
       "errors": []
     }
+  },
+  "workstations_and_front_guard": {
+    "scope": "Local Chrome; actual scene and original model surfaces; mobile viewport emulation only",
+    "workstations": {
+      "hands": [
+        {
+          "actor": 0,
+          "side": "left",
+          "minClearance": 0.02724248913975913,
+          "motion": 0.18750582205089678,
+          "range": [
+            [
+              -18.709615999068447,
+              -18.530042513556992
+            ],
+            [
+              3.659356988024932,
+              3.8510895545039308
+            ],
+            [
+              -11.059055855349914,
+              -10.845033064470924
+            ]
+          ]
+        },
+        {
+          "actor": 0,
+          "side": "right",
+          "minClearance": 0.02688336921108414,
+          "motion": 0.24195082659218628,
+          "range": [
+            [
+              -17.4699656468709,
+              -17.290051860336
+            ],
+            [
+              3.659077315559484,
+              3.8514443900005038
+            ],
+            [
+              -11.060126188036609,
+              -10.844183596761795
+            ]
+          ]
+        },
+        {
+          "actor": 1,
+          "side": "left",
+          "minClearance": 0.026149522968623717,
+          "motion": 0.2807697423978166,
+          "range": [
+            [
+              -5.709936937394781,
+              -5.53002618410286
+            ],
+            [
+              3.4924907602013144,
+              3.63268671220775
+            ],
+            [
+              -11.377154443303395,
+              -11.112374269006185
+            ]
+          ]
+        },
+        {
+          "actor": 1,
+          "side": "right",
+          "minClearance": 0.025999263420779073,
+          "motion": 0.3310229166986554,
+          "range": [
+            [
+              -4.46996662976512,
+              -4.290355535574171
+            ],
+            [
+              3.491734410703276,
+              3.634903522986395
+            ],
+            [
+              -11.37678501943722,
+              -11.106677960613409
+            ]
+          ]
+        },
+        {
+          "actor": 2,
+          "side": "left",
+          "minClearance": 0.07551292675221344,
+          "motion": 0.227332321146913,
+          "range": [
+            [
+              -18.709983490594716,
+              -18.530102138553563
+            ],
+            [
+              3.576696571689405,
+              3.6481979271289138
+            ],
+            [
+              -2.376767980638045,
+              -2.1865481672570652
+            ]
+          ]
+        },
+        {
+          "actor": 2,
+          "side": "right",
+          "minClearance": 0.025458995475386992,
+          "motion": 0.1794850750377063,
+          "range": [
+            [
+              -17.46992641660176,
+              -17.290020217680752
+            ],
+            [
+              3.5748480033710255,
+              3.7212981654007233
+            ],
+            [
+              -2.6699840070433867,
+              -2.4093603576518636
+            ]
+          ]
+        },
+        {
+          "actor": 3,
+          "side": "left",
+          "minClearance": 0.09452501584158668,
+          "motion": 0.1622389775496725,
+          "range": [
+            [
+              -5.709985865941646,
+              -5.530086855366072
+            ],
+            [
+              3.627947039141187,
+              3.685076158594941
+            ],
+            [
+              -2.322405348192534,
+              -2.155159923084385
+            ]
+          ]
+        },
+        {
+          "actor": 3,
+          "side": "right",
+          "minClearance": 0.09700252865276004,
+          "motion": 0.21023913140365855,
+          "range": [
+            [
+              -4.469882336875411,
+              -4.290011083028483
+            ],
+            [
+              3.6294637244975787,
+              3.6882332644961693
+            ],
+            [
+              -2.3217692252260393,
+              -2.141717988869848
+            ]
+          ]
+        },
+        {
+          "actor": 4,
+          "side": "left",
+          "minClearance": 0.023647562252614218,
+          "motion": 0.3297188788604374,
+          "range": [
+            [
+              17.430058297030996,
+              17.609957485486234
+            ],
+            [
+              3.5985746745013816,
+              3.74868910236788
+            ],
+            [
+              -6.141368758567381,
+              -5.86873854275462
+            ]
+          ]
+        },
+        {
+          "actor": 4,
+          "side": "right",
+          "minClearance": 0.023829743199133002,
+          "motion": 0.3329905885527482,
+          "range": [
+            [
+              18.39004837584218,
+              18.569948140076864
+            ],
+            [
+              3.601285263491339,
+              3.757457144695365
+            ],
+            [
+              -6.133139246431505,
+              -5.848788991913415
+            ]
+          ]
+        }
+      ],
+      "displays": [
+        {
+          "name": "laptop-live-display",
+          "parent": "laptop(Clone)",
+          "corners": [
+            [
+              16.908423756666668,
+              3.59873879961784,
+              -6.8527854415024905
+            ],
+            [
+              19.091576243333332,
+              3.59873879961784,
+              -6.8527854415024905
+            ],
+            [
+              16.908423756666668,
+              4.678736154224023,
+              -7.31496086002139
+            ],
+            [
+              19.091576243333332,
+              4.678736154224023,
+              -7.31496086002139
+            ]
+          ],
+          "changedPixels": 1065,
+          "contact": [
+            {
+              "gap": 0.0012176860296556644,
+              "alignment": 0.9999999999990855
+            },
+            {
+              "gap": 0.0012169393474677965,
+              "alignment": 0.9999999999990855
+            },
+            {
+              "gap": 0.0012169393474677965,
+              "alignment": 0.9999999999990855
+            },
+            {
+              "gap": 0.0012184327118434147,
+              "alignment": 0.9999999999990855
+            },
+            {
+              "gap": 0.0012184327118434147,
+              "alignment": 0.9999999999990855
+            }
+          ],
+          "normal": [
+            0,
+            0.39342978586127964,
+            0.9193546669252012
+          ],
+          "point": [
+            18,
+            4.138737476920931,
+            -7.08387315076194
+          ]
+        },
+        {
+          "name": "computerScreen-live-display",
+          "parent": "computerScreen(Clone)",
+          "corners": [
+            [
+              -19.732570264433836,
+              3.6420105637969424,
+              -12.453858223100244
+            ],
+            [
+              -16.26742973556615,
+              3.6420105637969424,
+              -12.453858223100244
+            ],
+            [
+              -19.732570264433836,
+              5.510568102538272,
+              -12.741984253373161
+            ],
+            [
+              -16.26742973556615,
+              5.510568102538272,
+              -12.741984253373161
+            ]
+          ],
+          "changedPixels": 378,
+          "contact": [
+            {
+              "gap": 0.0027319356380687424,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027311839414211874,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027311839414211874,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027326873347179852,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027326873347179852,
+              "alignment": 0.9999999999996422
+            }
+          ],
+          "normal": [
+            0,
+            0.1523959389235133,
+            0.9883195221180349
+          ],
+          "point": [
+            -17.999999999999993,
+            4.576289333167607,
+            -12.597921238236703
+          ]
+        },
+        {
+          "name": "computerScreen-live-display",
+          "parent": "computerScreen(Clone)",
+          "corners": [
+            [
+              -6.732570264433837,
+              3.6420105637969424,
+              -12.453858223100244
+            ],
+            [
+              -3.2674297355661484,
+              3.6420105637969424,
+              -12.453858223100244
+            ],
+            [
+              -6.732570264433837,
+              5.510568102538272,
+              -12.741984253373161
+            ],
+            [
+              -3.2674297355661484,
+              5.510568102538272,
+              -12.741984253373161
+            ]
+          ],
+          "changedPixels": 253,
+          "contact": [
+            {
+              "gap": 0.0027319356380687424,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027311839414211874,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027311839414211874,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027326873347179852,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027326873347179852,
+              "alignment": 0.9999999999996422
+            }
+          ],
+          "normal": [
+            0,
+            0.1523959389235133,
+            0.9883195221180349
+          ],
+          "point": [
+            -4.999999999999993,
+            4.576289333167607,
+            -12.597921238236703
+          ]
+        },
+        {
+          "name": "computerScreen-live-display",
+          "parent": "computerScreen(Clone)",
+          "corners": [
+            [
+              -19.732570264433836,
+              3.6420105637969424,
+              -3.6538582231002454
+            ],
+            [
+              -16.26742973556615,
+              3.6420105637969424,
+              -3.6538582231002454
+            ],
+            [
+              -19.732570264433836,
+              5.510568102538272,
+              -3.9419842533731604
+            ],
+            [
+              -16.26742973556615,
+              5.510568102538272,
+              -3.9419842533731604
+            ]
+          ],
+          "changedPixels": 289,
+          "contact": [
+            {
+              "gap": 0.00273193563806962,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.002731183941421694,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.002731183941421694,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027326873347175464,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027326873347179852,
+              "alignment": 0.9999999999996422
+            }
+          ],
+          "normal": [
+            0,
+            0.1523959389235133,
+            0.9883195221180349
+          ],
+          "point": [
+            -17.999999999999993,
+            4.576289333167607,
+            -3.797921238236703
+          ]
+        },
+        {
+          "name": "computerScreen-live-display",
+          "parent": "computerScreen(Clone)",
+          "corners": [
+            [
+              -6.732570264433837,
+              3.6420105637969424,
+              -3.6538582231002454
+            ],
+            [
+              -3.2674297355661484,
+              3.6420105637969424,
+              -3.6538582231002454
+            ],
+            [
+              -6.732570264433837,
+              5.510568102538272,
+              -3.9419842533731604
+            ],
+            [
+              -3.2674297355661484,
+              5.510568102538272,
+              -3.9419842533731604
+            ]
+          ],
+          "changedPixels": 322,
+          "contact": [
+            {
+              "gap": 0.00273193563806962,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.002731183941421694,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.002731183941421694,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027326873347175464,
+              "alignment": 0.9999999999996422
+            },
+            {
+              "gap": 0.0027326873347179852,
+              "alignment": 0.9999999999996422
+            }
+          ],
+          "normal": [
+            0,
+            0.1523959389235133,
+            0.9883195221180349
+          ],
+          "point": [
+            -4.999999999999993,
+            4.576289333167607,
+            -3.797921238236703
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "equipment": {
+      "date": "2026-10-31T07:41:21.072Z",
+      "poses": [
+        {
+          "id": "idle",
+          "bounds": [
+            3.1919324424910194,
+            6.68907578379792,
+            5.9707015898248565
+          ],
+          "gearFloorMin": 0.09053682478968962,
+          "sword": [
+            0.2212172639453534,
+            0.8273057889157243,
+            1.9038551993475967
+          ],
+          "shield": [
+            0.22121726394535424,
+            0.8273057889157243,
+            -1.9038551993475714
+          ]
+        },
+        {
+          "id": "attack",
+          "bounds": [
+            5.518487807215342,
+            6.68907578379792,
+            5.857942828730196
+          ],
+          "gearFloorMin": 0.09053682478968962,
+          "sword": [
+            1.234294364646955,
+            2.187074779404263,
+            1.7910964361843418
+          ],
+          "shield": [
+            0.22121726394535424,
+            0.8273057889157243,
+            -1.9038551993475714
+          ]
+        },
+        {
+          "id": "guard",
+          "bounds": [
+            3.6467190886929366,
+            6.68907578379792,
+            5.928290190967081
+          ],
+          "gearFloorMin": 0.3729519717796438,
+          "sword": [
+            0.2212172639453534,
+            0.8273057889157243,
+            1.9038551993475967
+          ],
+          "shield": [
+            1.2291325397689803,
+            2.9246490589313345,
+            -0.060352752624500905
+          ]
+        },
+        {
+          "id": "coordinator",
+          "bounds": [
+            4.818389681910007,
+            4.500000000000001,
+            6.165689171496965
+          ],
+          "gearFloorMin": null
+        }
+      ],
+      "guardSamples": [
+        {
+          "visor": [
+            -0.008231666712117051,
+            0.11685388471914313,
+            0.07894604022617092
+          ],
+          "forward": 0.9999999999999998,
+          "armScale": [
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "visor": [
+            -0.008231667055549348,
+            0.1168538848277948,
+            0.07894604120406956
+          ],
+          "forward": 1,
+          "armScale": [
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "visor": [
+            -0.008231667055549303,
+            0.1168538848277948,
+            0.07894604120406953
+          ],
+          "forward": 1,
+          "armScale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      "animationFrames": 60,
+      "gripsStayAttached": true,
+      "originalHairHidden": true,
+      "coordinator": "character-female-e",
+      "mouthAlignment": {
+        "frames": 90,
+        "maximumGap": 3.717131504477759e-08,
+        "handAttached": true,
+        "armUnstretched": true
+      },
+      "errors": []
+    },
+    "browser": {
+      "date": "2026-10-31T07:44:22.244Z",
+      "url": "http://127.0.0.1:4173/",
+      "browser": "156.0.8078.74",
+      "checks": [
+        {
+          "name": "1280px initial render, local assets, thumbnails and KST"
+        },
+        {
+          "name": "Kenney ghost floats through approach and knockback without slime squash",
+          "samples": 100,
+          "minimumHeight": 0.2701391999363102
+        },
+        {
+          "name": "10-second autonomous activity and stable scene layout",
+          "fps": 60,
+          "minimumOneSecondFPS": 60,
+          "metrics": {
+            "walk": 1311,
+            "typing": 2524,
+            "led": 25,
+            "melee": 2,
+            "breath": 1,
+            "combat": 3,
+            "encourage": 1
+          }
+        },
+        {
+          "name": "live reduced-motion change freezes animation and simulation"
+        },
+        {
+          "name": "raycast hero, pet, rack, developer and monster status"
+        },
+        {
+          "name": "female coordinator loads, encourages autonomously and exposes status through the sidebar"
+        },
+        {
+          "name": "all tabs, ArrowLeft/Right, Home/End and visible panels"
+        },
+        {
+          "name": "901px, 900px and 390px responsive layout; mobile labels hidden; all mobile tabs fit"
+        },
+        {
+          "name": "wall and whiteboard text follow surface angles across resize; board heading avoids bubbles"
+        },
+        {
+          "name": "initial reduced-motion preference: static frame, fixed bubbles, no combat"
+        },
+        {
+          "name": "ISSUES addition updates scene, sidebar, both timelines, bestiary and count"
+        },
+        {
+          "name": "grade change propagates to monster form and all information panels"
+        },
+        {
+          "name": "released state removes monsters and grays completed issues"
+        },
+        {
+          "name": "zero console errors, page errors and HTTP errors in all scenarios"
+        }
+      ],
+      "errors": []
+    },
+    "view": {
+      "date": "2026-10-31T07:45:07.293Z",
+      "url": "http://127.0.0.1:4173/",
+      "browser": "156.0.8078.74",
+      "checks": [
+        "100–200% buttons scale the scene and wall/board text together",
+        "zoomed raycast works; drag moves the view without an accidental click",
+        "keyboard and direction buttons work; 100–300% and pan limits are enforced; reset restores the whole office",
+        "ordinary wheel scrolls the page; Ctrl+wheel zooms around the pointed character",
+        "zoom survives viewport changes; 390px controls fit; reduced motion stays paused after navigation",
+        "Chrome touch emulation: tap, drag, reset; 375px portrait and 844px landscape controls fit"
+      ],
+      "errors": []
+    },
+    "visibility": {
+      "date": "2026-10-31T07:45:19.796Z",
+      "walking": {
+        "seconds": 23,
+        "collisions": [],
+        "observedStops": [
+          "crew-4:일정 점검",
+          "crew-5:커피 타임",
+          "crew-6:패치 진행, 어디까지 왔죠?",
+          "crew-4:보드 업데이트",
+          "crew-5:잠깐 산책",
+          "crew-5:자리 복귀",
+          "crew-6:커밋 준비됐나요?",
+          "crew-6:테스트 끝나면 바로 공유!",
+          "crew-5:커피 내리는 중"
+        ],
+        "coordinatorCalls": 36
+      },
+      "visibility": {
+        "actualDocumentHidden": true,
+        "hiddenSeconds": 2,
+        "framesDuringHidden": 0,
+        "simulationDeltaDuringHidden": 0,
+        "resumedDelta": 0.48340000000000005,
+        "events": [
+          {
+            "hidden": true,
+            "elapsed": 0.07660000000000003,
+            "frames": 5,
+            "metrics": {
+              "walk": 0,
+              "typing": 12,
+              "led": 0,
+              "melee": 0,
+              "breath": 0,
+              "combat": 0,
+              "encourage": 0
+            }
+          },
+          {
+            "hidden": false,
+            "elapsed": 0.07660000000000003,
+            "frames": 5,
+            "metrics": {
+              "walk": 0,
+              "typing": 12,
+              "led": 0,
+              "melee": 0,
+              "breath": 0,
+              "combat": 0,
+              "encourage": 0
+            }
+          }
+        ]
+      }
+    }
   }
 }

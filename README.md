@@ -51,8 +51,11 @@ Three.js, GLB, PNG 팔레트와 폰트를 모두 포함했습니다. 실행 중 
 - 안티앨리어싱은 꺼져 있습니다. DirectionalLight 1개, HemisphereLight 1개, `BasicShadowMap`을 사용합니다.
 - 말풍선·이름·등급·벽 라벨·릴리스 보드 제목은 HTML입니다. 벽 표지판과 보드 제목은 해당 3D 객체에 연결된 면의 꼭짓점을 투영해 상자 전체의 위치·기울기·크기를 맞춥니다. 말풍선은 가까운 빈 위치를 찾고 벽 표지판과 보드 제목 영역도 피해 배치합니다.
 - 직원은 모델의 실제 `sit`, `idle`, `walk` 애니메이션을 사용합니다. 보행 속도는 약 2.4 units/s입니다.
+- 앉은 직원과 회의 담당자는 실제 손 위치·팔 길이·키보드 높이를 기준으로 양손을 번갈아 움직입니다. 타이핑 외의 점검·빌드 상태에서는 속도를 낮춥니다. 원본 여성 모델의 손 도구는 해당 사무실 인스턴스에서만 제거하고 의상·손과 원본 GLB는 유지합니다.
+- 모니터 4대와 노트북 화면은 원본 모델의 LCD 면에 붙어 실제 기울기와 크기를 따릅니다. 코드 입력·커서·테스트 출력·진행 막대·일정 목록을 상태에 맞게 갱신하며, 숨긴 탭과 모션 줄이기에서는 손과 화면 모두 멈춥니다.
 - 일정 독려 담당은 Mini Characters의 여성 `character-female-e`입니다. 개발실의 중앙 통로를 오가며 확성기를 들고 금색 말풍선과 소리 파장으로 진행 상황을 확인합니다. 말할 때는 입 위치를 기준으로 어깨와 확성기 각도를 계산하여 좁은 뒤쪽이 입 앞에 오도록 합니다. 손잡이 연결과 원래 팔 길이를 유지합니다. “패치 진행, 어디까지 왔죠?”, “커밋 준비됐나요?”, “테스트 끝나면 바로 공유!”를 순환하며, 정차 문구는 `CREW`에서 바꿉니다.
 - 용사의 투구는 원본 머리 메시를 가려 머리카락이 튀어나오지 않게 했습니다. 검·방패는 스킨의 손 위치에 연결하고 공격·방어 시 팔을 따라 움직입니다. 장비는 대기 자세에서도 바닥 위에 유지됩니다.
+- 브레스 방어 시 방패를 투구 정면으로 내밀고 수직으로 세웁니다. 불꽃의 도착점은 방패 앞면을 따라갑니다.
 - 낮음·보통 등급은 Graveyard Kit의 흰 유령 모델을 사용합니다. 낮음은 작은 `꼬마 유령`, 보통은 `유령`이며 도감에서도 크기를 구분합니다. 원본의 `idle`·`walk`·`attack-melee-right` 애니메이션과 부유 이동을 사용하고, 장면·패널·이력·도감·활동 로그에 같은 이름과 모델을 반영합니다.
 - 근접 전투, 검 휘두르기, 넉백, 스파크, 드래곤 브레스와 방패 동작은 하나의 프레임 시간 기반 상태 머신으로 진행합니다. 별도의 전투 타이머가 백그라운드에서 계속 실행되지 않습니다.
 - 숨김 상태에서는 `requestAnimationFrame`을 취소하고 시뮬레이션 시간이 멈춥니다. 복귀 시 누적된 시간을 한꺼번에 진행하지 않습니다.
@@ -81,7 +84,7 @@ Three.js, GLB, PNG 팔레트와 폰트를 모두 포함했습니다. 실행 중 
 
 처음 제시된 `mini-characters-1` 주소 대신 공식 `mini-characters` 팩을 사용했습니다. 실제 포함된 파일과 SHA-256은 [assets/kenney/manifest.json](assets/kenney/manifest.json)에 기록했습니다. 캐릭터·던전 GLB가 참조하는 `Textures/colormap.png`도 포함되어 있습니다.
 
-**직접 만든 도형:** 드래곤, AGENT 로봇, 서버 랙, 화이트보드, 방 구조, 모니터 코드 줄, LED, 균열, 불꽃·스파크, 일정 독려 담당의 확성기·소리 파장은 Three.js 기본 도형으로 제작했습니다. 오거는 Mini Dungeon의 **오크를 확대하고 주황색 의상·복셀 몽둥이를 추가한 변형**입니다. 용사는 Mini Dungeon 인간에 은색 투구, 붉은 깃털, 파란 갑옷을 추가하고 실제 Kenney 검·방패를 사용합니다. 유령과 직원은 Kenney 원본 모델이며, 기존 직원 셔츠만 인스턴스별 팔레트 복제로 지정 색을 적용합니다. 새 일정 독려 담당은 원본 의상을 유지합니다. 원본 GLB는 변경하지 않았습니다.
+**직접 만든 도형:** 드래곤, AGENT 로봇, 서버 랙, 화이트보드, 방 구조, 화면 면, LED, 균열, 불꽃·스파크, 일정 독려 담당의 확성기·소리 파장은 Three.js 기본 도형으로 제작했습니다. 오거는 Mini Dungeon의 **오크를 확대하고 주황색 의상·복셀 몽둥이를 추가한 변형**입니다. 용사는 Mini Dungeon 인간에 은색 투구, 붉은 깃털, 파란 갑옷을 추가하고 실제 Kenney 검·방패를 사용합니다. 유령과 직원은 Kenney 원본 모델이며, 기존 직원 셔츠만 인스턴스별 팔레트 복제로 지정 색을 적용합니다. 새 일정 독려 담당은 원본 의상을 유지합니다. 화면 내용은 자체 CanvasTexture로 그립니다. 원본 GLB는 변경하지 않았습니다.
 
 ## 검증
 
@@ -93,12 +96,13 @@ npm test
 npm run test:browser
 npm run test:view
 npm run test:equipment
+npm run test:workstations
 npm run test:visibility
 ```
 
-브라우저 테스트는 기본적으로 macOS의 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`을 사용합니다. 다른 환경에서는 `CHROME_PATH`를 지정합니다. 서버 주소는 `OFFICE_URL`로 변경할 수 있습니다. `test:view`는 확대·이동·리셋, 확대 상태의 캐릭터 클릭과 글자 정렬, 키보드·휠·터치 모사, 작은 화면 배치를 검사합니다. `test:equipment`는 60개 애니메이션 프레임의 손·장비 결합, 투구, 장비의 바닥 간섭, 공격·방어 자세와 새 직원의 소품을 검사합니다. `test:visibility`는 테스트 전용 창에서 세 직원의 전체 보행 경로, 독려 문구·소리 효과와 정지·복귀 조건을 검사합니다.
+브라우저 테스트는 기본적으로 macOS의 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`을 사용합니다. 다른 환경에서는 `CHROME_PATH`를 지정합니다. 서버 주소는 `OFFICE_URL`로 변경할 수 있습니다. `test:view`는 확대·이동·리셋, 확대 상태의 캐릭터 클릭과 글자 정렬, 키보드·휠·터치 모사, 작은 화면 배치를 검사합니다. `test:equipment`는 60개 애니메이션 프레임의 손·장비 결합, 투구, 장비의 바닥 간섭, 공격·방어 자세와 새 직원의 소품을 검사합니다. `test:workstations`는 500개 실제 손 메시 표본의 키보드 간섭·움직임·팔 길이와 5개 화면의 원본 LCD 밀착·픽셀 변화를 검사합니다. `test:visibility`는 테스트 전용 창에서 세 직원의 전체 보행 경로, 독려 문구·소리 효과와 정지·복귀 조건을 검사합니다.
 
-[데스크톱 미리보기](docs/previews/desktop.png) · [모바일 미리보기](docs/previews/mobile.png) · [도감 미리보기](docs/previews/bestiary.png) · [영웅 장비·일정 독려 담당](docs/previews/equipment.png)
+[데스크톱 미리보기](docs/previews/desktop.png) · [모바일 미리보기](docs/previews/mobile.png) · [도감 미리보기](docs/previews/bestiary.png) · [영웅 장비·일정 독려 담당](docs/previews/equipment.png) · [타이핑·화면 확대](docs/previews/workstations.png)
 
 최종 환경, 실제 측정치, 확인 범위는 [docs/validation.md](docs/validation.md)를 참고하세요. 테스트 결과와 스크린샷은 `test-results/`에 생성됩니다.
 
