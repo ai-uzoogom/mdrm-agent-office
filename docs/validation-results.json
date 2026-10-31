@@ -862,5 +862,216 @@
       "samples": 100,
       "minimumHeight": 0.27001066237345495
     }
+  },
+  "hero_equipment_and_coordinator": {
+    "equipment": {
+      "date": "2026-10-31T06:47:41.127Z",
+      "poses": [
+        {
+          "id": "idle",
+          "bounds": [
+            3.1919324424910194,
+            6.68907578379792,
+            5.9707015898248565
+          ],
+          "gearFloorMin": 0.09053682478968962,
+          "sword": [
+            0.2212172639453534,
+            0.8273057889157243,
+            1.9038551993475967
+          ],
+          "shield": [
+            0.22121726394535424,
+            0.8273057889157243,
+            -1.9038551993475714
+          ]
+        },
+        {
+          "id": "attack",
+          "bounds": [
+            5.518487807215342,
+            6.68907578379792,
+            5.857942828730196
+          ],
+          "gearFloorMin": 0.09053682478968962,
+          "sword": [
+            1.234294364646955,
+            2.187074779404263,
+            1.7910964361843418
+          ],
+          "shield": [
+            0.22121726394535424,
+            0.8273057889157243,
+            -1.9038551993475714
+          ]
+        },
+        {
+          "id": "guard",
+          "bounds": [
+            3.1919324424910194,
+            6.68907578379792,
+            6.110718659435859
+          ],
+          "gearFloorMin": 0.3729519717796438,
+          "sword": [
+            0.2212172639453534,
+            0.8273057889157243,
+            1.9038551993475967
+          ],
+          "shield": [
+            0.6892184629598209,
+            2.749042379055802,
+            -2.0527526303077464
+          ]
+        },
+        {
+          "id": "coordinator",
+          "bounds": [
+            4.818389681910007,
+            4.527233184048397,
+            5.796916653400283
+          ],
+          "gearFloorMin": null
+        }
+      ],
+      "animationFrames": 60,
+      "gripsStayAttached": true,
+      "originalHairHidden": true,
+      "coordinator": "character-female-e",
+      "errors": []
+    },
+    "browser": {
+      "date": "2026-10-31T06:48:00.172Z",
+      "url": "http://127.0.0.1:4173/",
+      "browser": "156.0.8078.74",
+      "checks": [
+        {
+          "name": "1280px initial render, local assets, thumbnails and KST"
+        },
+        {
+          "name": "Kenney ghost floats through approach and knockback without slime squash",
+          "samples": 100,
+          "minimumHeight": 0.27013778801101085
+        },
+        {
+          "name": "10-second autonomous activity and stable scene layout",
+          "fps": 60,
+          "minimumOneSecondFPS": 60,
+          "metrics": {
+            "walk": 1313,
+            "typing": 324,
+            "led": 25,
+            "melee": 2,
+            "breath": 1,
+            "combat": 3,
+            "encourage": 1
+          }
+        },
+        {
+          "name": "live reduced-motion change freezes animation and simulation"
+        },
+        {
+          "name": "raycast hero, pet, rack, developer and monster status"
+        },
+        {
+          "name": "female coordinator loads, encourages autonomously and exposes status through the sidebar"
+        },
+        {
+          "name": "all tabs, ArrowLeft/Right, Home/End and visible panels"
+        },
+        {
+          "name": "901px, 900px and 390px responsive layout; mobile labels hidden; all mobile tabs fit"
+        },
+        {
+          "name": "wall and whiteboard text follow surface angles across resize; board heading avoids bubbles"
+        },
+        {
+          "name": "initial reduced-motion preference: static frame, fixed bubbles, no combat"
+        },
+        {
+          "name": "ISSUES addition updates scene, sidebar, both timelines, bestiary and count"
+        },
+        {
+          "name": "grade change propagates to monster form and all information panels"
+        },
+        {
+          "name": "released state removes monsters and grays completed issues"
+        },
+        {
+          "name": "zero console errors, page errors and HTTP errors in all scenarios"
+        }
+      ],
+      "errors": []
+    },
+    "walking_and_visibility": {
+      "date": "2026-10-31T06:45:14.012Z",
+      "walking": {
+        "seconds": 23,
+        "collisions": [],
+        "observedStops": [
+          "crew-4:일정 점검",
+          "crew-5:커피 타임",
+          "crew-6:패치 진행, 어디까지 왔죠?",
+          "crew-4:보드 업데이트",
+          "crew-5:잠깐 산책",
+          "crew-5:자리 복귀",
+          "crew-6:커밋 준비됐나요?",
+          "crew-6:테스트 끝나면 바로 공유!",
+          "crew-5:커피 내리는 중"
+        ],
+        "coordinatorCalls": 36
+      },
+      "visibility": {
+        "actualDocumentHidden": true,
+        "hiddenSeconds": 2,
+        "framesDuringHidden": 0,
+        "simulationDeltaDuringHidden": 0,
+        "resumedDelta": 0.49990000000000034,
+        "events": [
+          {
+            "hidden": true,
+            "elapsed": 0.094,
+            "frames": 6,
+            "metrics": {
+              "walk": 0,
+              "typing": 8,
+              "led": 0,
+              "melee": 0,
+              "breath": 0,
+              "combat": 0,
+              "encourage": 0
+            }
+          },
+          {
+            "hidden": false,
+            "elapsed": 0.094,
+            "frames": 6,
+            "metrics": {
+              "walk": 0,
+              "typing": 8,
+              "led": 0,
+              "melee": 0,
+              "breath": 0,
+              "combat": 0,
+              "encourage": 0
+            }
+          }
+        ]
+      }
+    },
+    "view": {
+      "date": "2026-10-31T06:48:05.374Z",
+      "url": "http://127.0.0.1:4173/",
+      "browser": "156.0.8078.74",
+      "checks": [
+        "100–200% buttons scale the scene and wall/board text together",
+        "zoomed raycast works; drag moves the view without an accidental click",
+        "keyboard and direction buttons work; 100–300% and pan limits are enforced; reset restores the whole office",
+        "ordinary wheel scrolls the page; Ctrl+wheel zooms around the pointed character",
+        "zoom survives viewport changes; 390px controls fit; reduced motion stays paused after navigation",
+        "Chrome touch emulation: tap, drag, reset; 375px portrait and 844px landscape controls fit"
+      ],
+      "errors": []
+    }
   }
 }

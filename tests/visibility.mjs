@@ -4,6 +4,7 @@ import {spawn} from 'node:child_process';
 import {writeFile,mkdir,mkdtemp,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {CREW} from '../src/data.js';
 const executablePath=process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const url=process.env.OFFICE_URL||'http://127.0.0.1:4173/';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -14,10 +15,11 @@ async function checkWalking(){
  const browser=await chromium.launch({executablePath,headless:true,args:['--no-proxy-server']});
  try{
   const page=await browser.newPage({viewport:{width:1280,height:960}});await page.goto(url);await page.waitForFunction(()=>!!window.__OFFICE_DEBUG__);
-  const collisions=[],stops=new Set(),start=Date.now();
+  const collisions=[],stops=new Set(),calls=[],start=Date.now();
   while(Date.now()-start<23000){
    const s=await page.evaluate(()=>window.__OFFICE_DEBUG__.snapshot());
    for(const actor of s.crew.slice(4)){
+    if(actor.behavior==='encourage')calls.push({calling:actor.calling,waves:actor.soundWaves});
     stops.add(`${actor.key}:${actor.status}`);const [x,,z]=actor.position;
     for(const obstacle of s.walkObstacles){
      const dx=Math.max(obstacle.min[0]-x,0,x-obstacle.max[0]),dz=Math.max(obstacle.min[2]-z,0,z-obstacle.max[2]);
@@ -27,8 +29,10 @@ async function checkWalking(){
    await page.waitForTimeout(200);
   }
   assert.deepEqual(collisions,[],'walker intersected furniture');
-  assert.equal(stops.size,6,'not all walking stops observed');
-  result.walking={seconds:23,collisions,observedStops:[...stops]};console.log('PASS full walking routes avoid furniture');
+  const expected=CREW.flatMap((person,i)=>person.walker?person.stops.map(text=>`crew-${i}:${text}`):[]);
+  assert.deepEqual([...stops].sort(),expected.sort(),'not all walking stops observed');
+  assert.ok(calls.some(s=>s.calling&&s.waves)&&calls.some(s=>!s.calling&&!s.waves),'coordinator did not alternate between calling and walking');
+  result.walking={seconds:23,collisions,observedStops:[...stops],coordinatorCalls:calls.filter(s=>s.calling).length};console.log('PASS all three walking routes avoid furniture; coordinator cycles phrases and sound waves');
  }finally{await browser.close();}
 }
 async function checkNativeVisibility(){

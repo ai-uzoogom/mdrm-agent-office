@@ -27,6 +27,7 @@ export const CREW = [
   { role: '빌드·검수', shirt: '#e5873a', screen: '#f6a050', statuses: ['빌드 중', '확인 필요!', '검수 중', '빌드 통과'] },
   { role: '릴리스 관리', shirt: '#c8503a', walker: true, stops: ['일정 점검', '보드 업데이트'] },
   { role: '운영 지원', shirt: '#e8b84a', walker: true, stops: ['커피 타임', '커피 내리는 중', '잠깐 산책', '자리 복귀'] },
+  { role: '일정 독려', shirt: '#f5c542', walker: true, behavior: 'encourage', stops: ['패치 진행, 어디까지 왔죠?', '커밋 준비됐나요?', '테스트 끝나면 바로 공유!'] },
 ];
 export const AS_OF_DATE = '2026-10-31';
 export const TIME_ZONE = 'Asia/Seoul';

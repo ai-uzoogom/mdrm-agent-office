@@ -6,7 +6,7 @@ const CACHE = new Map();
 const BOX = new THREE.BoxGeometry(1, 1, 1);
 const materials = new Map();
 const clothingTextures = new Map();
-export const CHARACTER_FILES = ['character-male-a', 'character-female-a', 'character-male-c', 'character-female-d', 'character-male-f', 'character-female-b'];
+export const CHARACTER_FILES = ['character-male-a', 'character-female-a', 'character-male-c', 'character-female-d', 'character-male-f', 'character-female-b', 'character-female-e'];
 const FURNITURE = ['desk','chairDesk','computerScreen','computerKeyboard','computerMouse','bookcaseOpen','books','kitchenCoffeeMachine','kitchenCabinet','plantSmall1','pottedPlant','table','chairCushion','laptop','rugRectangle'];
 const DUNGEON = ['character-human','character-orc','weapon-sword','shield-rectangle','barrel','rocks'];
 export async function loadAssets() {
@@ -77,7 +77,7 @@ function recolorClothing(model,index,color) {
 }
 
 export function mini(index=0, shirt, height=4.5, kind='crew') {
-  const filename = {hero:'character-human',ogre:'character-orc',ghost:'character-ghost'}[kind] ?? CHARACTER_FILES[index%CHARACTER_FILES.length];
+  const filename = {hero:'character-human',ogre:'character-orc',ghost:'character-ghost',coordinator:'character-female-e'}[kind] ?? CHARACTER_FILES[index%CHARACTER_FILES.length];
   const asset = CACHE.get(filename), root=group(), model=cloneSkeleton(asset.scene); root.add(model);
   const b = new THREE.Box3().setFromObject(model), size=b.getSize(new THREE.Vector3());
   const scale=height/size.y; model.scale.setScalar(scale); model.position.y=-b.min.y*scale;
@@ -90,27 +90,89 @@ export function mini(index=0, shirt, height=4.5, kind='crew') {
   setAction('idle'); mixer.update(.02);
   const bones = Object.fromEntries(['head','torso','arm-left','arm-right','leg-left','leg-right'].map(n=>[n,model.getObjectByName(n)]));
   if(shirt && bones.torso) box(bones.torso,.205,.16,.19,shirt,0,.065,.002);
-  const actor={root,model,mixer,actions,bones,setAction,height,scale,kind};
+  const actor={root,model,mixer,actions,bones,setAction,height,scale,kind,filename};
   return actor;
 }
+// Kenney's mini rigs end at the arm bones. Locate the fist from the distal
+// skinned vertices in bind space, so the grip follows the actual animated hand.
+function handMount(actor,side) {
+  const bone=actor.bones[`arm-${side}`],points=[],point=new THREE.Vector3();
+  actor.model.traverse(mesh=>{
+    if(!mesh.isSkinnedMesh)return;
+    const joint=mesh.skeleton.bones.indexOf(bone);if(joint<0)return;
+    const {position,skinIndex,skinWeight}=mesh.geometry.attributes;
+    for(let i=0;i<position.count;i++)for(let k=0;k<4;k++){
+      if(skinIndex.getComponent(i,k)!==joint||skinWeight.getComponent(i,k)<.9)continue;
+      point.fromBufferAttribute(position,i).applyMatrix4(mesh.bindMatrix).applyMatrix4(mesh.skeleton.boneInverses[joint]);points.push(point.clone());break;
+    }
+  });
+  const reach=Math.max(...points.map(p=>Math.abs(p.x)));
+  const hand=new THREE.Box3().setFromPoints(points.filter(p=>Math.abs(p.x)>reach*.65)).getCenter(new THREE.Vector3());
+  const mount=group(bone);mount.position.copy(hand);mount.name=`${side}-hand-grip`;
+  actor.root.updateMatrixWorld(true);
+  const frame=actor.model.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(bone.getWorldQuaternion(new THREE.Quaternion()));
+  mount.quaternion.copy(frame.invert());
+  return mount;
+}
+function faceInModelSpace(actor,mount,x=0,y=0,z=0) {
+  actor.root.updateMatrixWorld(true);
+  const modelFrame=actor.model.getWorldQuaternion(new THREE.Quaternion()).invert();
+  const boneFrame=mount.parent.getWorldQuaternion(new THREE.Quaternion());
+  mount.quaternion.copy(modelFrame.multiply(boneFrame).invert()).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)));
+}
 export function hero() {
-  const actor=mini(0,null,5.3,'hero'); const {root,bones}=actor;
+  const actor=mini(0,null,5.3,'hero'); const {bones}=actor;
+  // The full helmet replaces the separate original head mesh; its hair must
+  // not protrude through the shell. Keep the head bone for attached equipment.
+  actor.model.getObjectByName('head-mesh').visible=false;
   const head=bones.head;
-  box(head,.48,.28,.39,'#c2cdd7',0,.18,.015);
-  box(head,.49,.07,.41,'#e1e5e2',0,.3,.015);
-  box(head,.34,.10,.025,'#34425a',0,.16,.222);
-  for(let x=-.105;x<=.11;x+=.07)box(head,.018,.10,.03,'#c2cdd7',x,.16,.241);
-  box(head,.075,.20,.17,'#d74b5d',0,.43,-.025);
-  box(head,.075,.12,.16,'#ff7881',0,.52,-.08);
-  box(bones.torso,.24,.19,.21,'#4166bb',0,.08,0);
-  box(bones.torso,.25,.04,.22,'#c4cfdb',0,.17,0);
-  const swordPivot=group(root,-1.45,2.2,.4);
-  const sword=prop('weapon-sword',{h:3.6});swordPivot.add(sword);sword.position.y=-.55;swordPivot.rotation.z=-.35;
-  const shieldPivot=group(root,1.35,2.1,.55);
-  const shield=prop('shield-rectangle',{h:2.5,w:1.9});shieldPivot.add(shield);shield.position.y=-1.1;
-  box(shieldPivot,.95,1.35,.24,'#4168bd',0,.1,.24);
-  box(shieldPivot,.19,.95,.1,'#f5c542',0,.1,.41);box(shieldPivot,.65,.19,.1,'#f5c542',0,.2,.41);
+  box(head,.14,.08,.14,'#34425a',0,0,0);
+  box(head,.46,.34,.41,'#c2cdd7',0,.19,.015);
+  box(head,.48,.045,.43,'#e1e5e2',0,.375,.015);
+  box(head,.34,.10,.018,'#34425a',0,.19,.228);
+  for(const x of [-.105,-.035,.035,.105])box(head,.018,.10,.018,'#c2cdd7',x,.19,.245);
+  box(head,.075,.18,.17,'#d74b5d',0,.47,-.025);
+  box(head,.075,.10,.16,'#ff7881',0,.56,-.08);
+  box(bones.torso,.32,.18,.285,'#4166bb',0,.084,0);
+  box(bones.torso,.325,.025,.29,'#c4cfdb',0,.17,0);
+  const swordPivot=handMount(actor,'right'),shieldPivot=handMount(actor,'left');
+  swordPivot.rotateZ(.18);
+  const sword=prop('weapon-sword',{h:.44});swordPivot.add(sword);sword.position.y=-.045;
+  const shield=prop('shield-rectangle',{h:.28,w:.25});shieldPivot.add(shield);shield.position.set(0,-.105,.055);
+  box(shieldPivot,.14,.20,.018,'#4168bd',0,.035,.124);
+  box(shieldPivot,.024,.12,.012,'#f5c542',0,.035,.139);box(shieldPivot,.09,.024,.012,'#f5c542',0,.055,.140);
+  const rest={right:bones['arm-right'].quaternion.clone(),left:bones['arm-left'].quaternion.clone()};
+  actor.setEquipmentPose=(swing=0,guard=0)=>{
+    bones['arm-right'].quaternion.copy(rest.right);bones['arm-right'].rotateY(.9*swing);bones['arm-right'].rotateZ(-.55*swing);
+    bones['arm-left'].quaternion.copy(rest.left);bones['arm-left'].rotateY(-.7*guard);bones['arm-left'].rotateZ(1.05*guard);
+    // Aim the blade into the invasion lane while retaining the grip on the hand.
+    faceInModelSpace(actor,swordPivot,1.65*swing,0,.18);
+    faceInModelSpace(actor,shieldPivot,-.12*guard,-.2*guard,0);
+  };
   actor.sword=swordPivot;actor.shield=shieldPivot;return actor;
+}
+export function crewCharacter(person,index) {
+  if(person.behavior!=='encourage')return mini(index,person.shirt);
+  const actor=mini(0,null,4.5,'coordinator'),phone=handMount(actor,'right');
+  box(phone,.045,.10,.05,'#4166bb',0,.025,0);
+  const horn=new THREE.Mesh(new THREE.CylinderGeometry(.115,.055,.19,8),material('#f5c542'));
+  horn.rotation.x=Math.PI/2;horn.position.set(0,.12,.045);horn.castShadow=true;phone.add(horn);
+  const opening=new THREE.Mesh(new THREE.CircleGeometry(.10,8),material('#34425a'));opening.position.set(0,.12,.142);phone.add(opening);
+  const waves=group(phone,0,.12,.18);
+  for(let i=0;i<3;i++){
+    const wave=new THREE.Mesh(new THREE.TorusGeometry(.12+i*.035,.008,4,12),new THREE.MeshBasicMaterial({color:'#f5c542',transparent:true,opacity:.7,depthWrite:false}));
+    wave.position.z=i*.12;wave.castShadow=false;waves.add(wave);
+  }
+  const rest=actor.bones['arm-right'].quaternion.clone();
+  actor.setEncouragementPose=(time,calling)=>{
+    const arm=actor.bones['arm-right'];
+    if(calling){arm.quaternion.copy(rest);arm.rotateZ(-1.55);arm.rotateY(.65);arm.rotateX(Math.sin(time*7)*.04);}
+    faceInModelSpace(actor,phone,0,.12,0);
+    waves.visible=calling;
+    waves.children.forEach((wave,i)=>{const pulse=(time*1.8+i/3)%1;wave.scale.setScalar(.8+pulse*.5);wave.material.opacity=.65*(1-pulse*.65);});
+    actor.calling=calling;
+  };
+  actor.phone=phone;actor.waves=waves;actor.setEncouragementPose(0,true);return actor;
 }
 export function robot() {
   const root=group(), body=group(root);

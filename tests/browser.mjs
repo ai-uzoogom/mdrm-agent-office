@@ -1,7 +1,7 @@
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { readFile,mkdir,writeFile } from 'node:fs/promises';
-import { kstDate, RENDERING } from '../src/data.js';
+import { kstDate, RENDERING, CREW } from '../src/data.js';
 
 const base=process.env.OFFICE_URL||'http://127.0.0.1:4173/';
 const executablePath=process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -48,10 +48,13 @@ try{
  const {context,page}=await openPage();
  await noOverflow(page);
  assert.equal(await page.locator('#today-kst').getAttribute('datetime'),kstDate());
- assert.equal(await page.locator('.agent-row').count(),6);
+ assert.equal(await page.locator('.agent-row').count(),CREW.length);
  assert.equal(await page.locator('.monster-row').count(),3);
  assert.equal(await page.locator('[role="tab"]').count(),4);
- assert.equal((await snapshot(page)).assets.files,28);
+ assert.equal((await snapshot(page)).assets.files,29);
+ assert.equal((await snapshot(page)).crew.find(a=>a.behavior==='encourage').model,'character-female-e');
+ assert.equal(await page.locator('.crew-card').count(),7);
+ assert.ok(await page.getByRole('button',{name:'일정 독려 상태 보기'}).isVisible());
  assert.ok((await snapshot(page)).assets.characterAnimations.includes('sit'));
  for(const clip of ['idle','walk','attack-melee-right'])assert.ok((await snapshot(page)).assets.ghostAnimations.includes(clip));
  assert.equal((await snapshot(page)).issues.find(i=>i.id==='nginx').kind,'ghost');
@@ -71,7 +74,7 @@ try{
  const before=await snapshot(page),wallStart=Date.now();
  await page.waitForTimeout(10000);
  const after=await snapshot(page),wall=(Date.now()-wallStart)/1000,fps=(after.frames-before.frames)/wall;
- for(const key of ['walk','typing','led','melee','breath'])assert.ok(after.metrics[key]>0,`no ${key} within 10s`);
+ for(const key of ['walk','typing','led','melee','breath','encourage'])assert.ok(after.metrics[key]>0,`no ${key} within 10s`);
  const frameTimes=await page.evaluate(()=>{cancelAnimationFrame(window.__qaFrameRequest);return window.__qaFrameTimes;});
  const ghostSamples=await page.evaluate(()=>{clearInterval(window.__qaGhostTimer);return window.__qaGhostSamples;});
  assert.ok(ghostSamples.length>40);
@@ -105,6 +108,10 @@ try{
   assert.ok((await page.locator('#activity-log li').first().textContent()).includes(expected),`raycast ${expected}`);
  }
  record('raycast hero, pet, rack, developer and monster status');
+ await page.getByRole('button',{name:'일정 독려 상태 보기'}).click();
+ assert.ok((await page.locator('#activity-log li').first().textContent()).includes('일정 독려'));
+ assert.ok((await page.locator('.bubble:not([hidden])').allTextContents()).some(text=>text.includes('일정 독려')));
+ record('female coordinator loads, encourages autonomously and exposes status through the sidebar');
  await page.getByRole('tab',{name:'이력'}).focus();await page.keyboard.press('ArrowRight');
  assert.equal(await page.locator('#tab-bestiary').getAttribute('aria-selected'),'true');assert.ok(await page.locator('#panel-bestiary').isVisible());
  await page.locator('#panel-bestiary').screenshot({path:'test-results/bestiary.png'});
