@@ -646,5 +646,117 @@
         }
       ]
     }
+  },
+  "high_resolution_1920_local": {
+    "browser": {
+      "date": "2026-10-31T04:43:47.469Z",
+      "url": "http://127.0.0.1:4173/",
+      "browser": "156.0.8078.74",
+      "checks": [
+        {
+          "name": "1280px initial render, local assets, thumbnails and KST"
+        },
+        {
+          "name": "10-second autonomous activity and stable scene layout",
+          "fps": 60,
+          "minimumOneSecondFPS": 60,
+          "metrics": {
+            "walk": 893,
+            "typing": 1018,
+            "led": 25,
+            "melee": 2,
+            "breath": 1,
+            "combat": 3
+          }
+        },
+        {
+          "name": "live reduced-motion change freezes animation and simulation"
+        },
+        {
+          "name": "raycast hero, pet, rack, developer and monster status"
+        },
+        {
+          "name": "all tabs, ArrowLeft/Right, Home/End and visible panels"
+        },
+        {
+          "name": "901px, 900px and 390px responsive layout; mobile labels hidden; all mobile tabs fit"
+        },
+        {
+          "name": "initial reduced-motion preference: static frame, fixed bubbles, no combat"
+        },
+        {
+          "name": "ISSUES addition updates scene, sidebar, both timelines, bestiary and count"
+        },
+        {
+          "name": "grade change propagates to monster form and all information panels"
+        },
+        {
+          "name": "released state removes monsters and grays completed issues"
+        },
+        {
+          "name": "zero console errors, page errors and HTTP errors in all scenarios"
+        }
+      ],
+      "errors": []
+    },
+    "pixel_density": {
+      "date": "2026-10-31T04:44:34.483Z",
+      "url": "http://127.0.0.1:4173/",
+      "browser": "156.0.8078.74",
+      "results": [
+        {
+          "name": "phone-dpr3",
+          "width": 390,
+          "height": 844,
+          "dpr": 3,
+          "expected": 1056,
+          "target": {
+            "width": 1056,
+            "height": 1035
+          },
+          "viewport": {
+            "width": 352,
+            "height": 345
+          },
+          "fps": 60,
+          "minimumOneSecondFPS": 60
+        },
+        {
+          "name": "tablet-dpr3",
+          "width": 900,
+          "height": 1100,
+          "dpr": 3,
+          "expected": 1920,
+          "target": {
+            "width": 1920,
+            "height": 1423
+          },
+          "viewport": {
+            "width": 846,
+            "height": 627
+          },
+          "fps": 60.1,
+          "minimumOneSecondFPS": 60
+        },
+        {
+          "name": "desktop-dpr1",
+          "width": 1280,
+          "height": 1000,
+          "dpr": 1,
+          "expected": 876,
+          "target": {
+            "width": 876,
+            "height": 618
+          },
+          "viewport": {
+            "width": 876,
+            "height": 618
+          },
+          "fps": 60,
+          "minimumOneSecondFPS": 60
+        }
+      ],
+      "errors": []
+    }
   }
 }

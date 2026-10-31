@@ -46,7 +46,7 @@ Three.js, GLB, PNG 팔레트와 폰트를 모두 포함했습니다. 실행 중 
 - Three.js **0.160.0**을 로컬 고정하고 `GLTFLoader`, `SkeletonUtils.clone`, `AnimationMixer`를 사용합니다.
 - 60 × 44 월드의 열린 디오라마에 두 벽과 낮은 칸막이, 개발실·회의실·서버실을 배치했습니다.
 - 정사영 카메라의 방위각은 45°, 내려다보는 각도는 약 35.264°입니다.
-- 화면 크기와 픽셀 밀도(최대 2배)를 반영해 가로 최대 960px `WebGLRenderTarget`에 먼저 렌더링합니다. 1280px / DPR 2에서는 가로 960px, 390px / DPR 2에서는 가로 704px입니다. `NearestFilter`와 CSS `image-rendering: pixelated`를 유지해 세밀한 픽셀 표현을 사용합니다.
+- 화면 크기와 픽셀 밀도(최대 3배)를 반영해 가로 최대 1920px `WebGLRenderTarget`에 먼저 렌더링합니다. 1280px / DPR 2에서는 가로 1752px, 390px / DPR 3에서는 가로 1056px입니다. `NearestFilter`와 CSS `image-rendering: pixelated`를 유지해 세밀한 픽셀 표현을 사용합니다.
 - 안티앨리어싱은 꺼져 있습니다. DirectionalLight 1개, HemisphereLight 1개, `BasicShadowMap`을 사용합니다.
 - 말풍선·이름·등급·벽 라벨은 HTML입니다. 매 프레임 월드 좌표를 카메라로 투영하며, 말풍선은 가까운 빈 위치를 찾아 겹침을 줄입니다.
 - 직원은 모델의 실제 `sit`, `idle`, `walk` 애니메이션을 사용합니다. 보행 속도는 약 2.4 units/s입니다.
@@ -54,7 +54,7 @@ Three.js, GLB, PNG 팔레트와 폰트를 모두 포함했습니다. 실행 중 
 - 숨김 상태에서는 `requestAnimationFrame`을 취소하고 시뮬레이션 시간이 멈춥니다. 복귀 시 누적된 시간을 한꺼번에 진행하지 않습니다.
 - `prefers-reduced-motion: reduce`에서는 초기 정지 화면과 고정 상태를 표시합니다. 창 크기 변경·상태 조회에 필요한 재렌더만 수행합니다.
 - 활동 로그는 최신 7개를 유지하고 새 항목만 `aria-live="polite"`로 알립니다. 상태 버튼으로 키보드 접근도 가능합니다.
-- 탭은 방향키·Home·End를 지원합니다. 썸네일은 동일한 정사영·조명 팔레트로 192 × 192 오프스크린 렌더한 실제 3D 정지 이미지입니다.
+- 탭은 방향키·Home·End를 지원합니다. 썸네일은 동일한 정사영·조명 팔레트로 384 × 384 오프스크린 렌더한 실제 3D 정지 이미지입니다.
 
 ## 채택한 디자인
 

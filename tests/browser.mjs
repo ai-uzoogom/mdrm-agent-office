@@ -34,7 +34,7 @@ try{
  assert.equal((await snapshot(page)).assets.files,27);
  assert.ok((await snapshot(page)).assets.characterAnimations.includes('sit'));
  assert.ok(await page.locator('[data-thumbnail]').evaluateAll((images,size)=>images.every(i=>i.complete&&i.naturalWidth===size&&i.naturalHeight===size),RENDERING.thumbnailSize));
- assert.equal((await snapshot(page)).target.width,960);
+ assert.equal((await snapshot(page)).target.width,1752);
  assert.equal(await page.locator('#office-canvas').evaluate(canvas=>canvas.width),2*(await snapshot(page)).viewport.width);
  await screenshot(page,'desktop');
  record('1280px initial render, local assets, thumbnails and KST');
