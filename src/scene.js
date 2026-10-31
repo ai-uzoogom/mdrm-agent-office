@@ -7,7 +7,7 @@ const lerp=THREE.MathUtils.lerp, ease=t=>t*t*(3-2*t), random=(a,b)=>a+Math.rando
 export class OfficeScene {
   constructor({canvas,stage,overlay,onLog,onCrew,onMotion,onReady}) {
     Object.assign(this,{canvas,stage,overlay,onLog,onCrew,onMotion,onReady});
-    this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.codeLines=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
+    this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.surfaceLabels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.codeLines=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
     this.motionQuery=matchMedia('(prefers-reduced-motion: reduce)');this.reduced=this.motionQuery.matches;this.pointer=new THREE.Vector2();this.raycaster=new THREE.Raycaster();this.projectVector=new THREE.Vector3();this.raf=null;this.ready=false;this.battleCursor=2;
     this.nextCrew=1.6;this.nextLed=.4;this.nextCode=.13;this.nextBattle=1.8;this.nextMeeting=5;this.lastCalendar=0;
   }
@@ -45,7 +45,8 @@ export class OfficeScene {
     }
     const floorColors=[...PALETTE.wood,...PALETTE.meeting,...PALETTE.server];const transform=new THREE.Object3D();
     positions.forEach((list,i)=>{const mesh=new THREE.InstancedMesh(new THREE.BoxGeometry(2.98,.16,2.91),material(floorColors[i]),list.length);list.forEach(([x,y,z],j)=>{transform.position.set(x,y,z);transform.updateMatrix();mesh.setMatrixAt(j,transform.matrix);});mesh.receiveShadow=true;room.add(mesh);});
-    box(room,61,12,1.1,PALETTE.wall,0,6,-22);box(room,1.1,12,44,PALETTE.wall,-30,6,0);
+    const backWall=group(room,0,6,-22),sideWall=group(room,-30,6,0);
+    box(backWall,61,12,1.1,PALETTE.wall);box(sideWall,1.1,12,44,PALETTE.wall);
     box(room,61,.45,1.4,'#857dab',0,12.1,-22);box(room,1.4,.45,44,'#857dab',-30,12.1,0);
     box(room,60,.7,.3,'#6a619b',0,.4,-21.35);box(room,.3,.7,44,'#6a619b',-29.35,.4,0);
     // Office partition: both rooms retain open, navigable doorways.
@@ -67,13 +68,14 @@ export class OfficeScene {
     this.addProp('laptop',{h:1.55,w:2.6,d:2.2},18,3.3,-7.6,Math.PI);
     box(room,2,.07,1.4,'#e5e4d8',14.6,3.4,-8.1);box(room,1.5,.07,1,'#c79bff',21,3.4,-9.5);
     for(const [x,z,rot] of [[11.1,-8.5,-Math.PI/2],[24.8,-8.5,Math.PI/2],[18,-3.7,0],[18,-13,Math.PI]])this.addProp('chairCushion',{h:3.7,w:2.6,d:2.8},x,0,z,rot);
-    box(room,15.8,6.3,.4,'#34334f',18.2,7.1,-21.3);box(room,15.1,5.6,.22,'#f4efe0',18.2,7.1,-21);
-    box(room,15.7,.2,.8,'#aaa8b8',18.2,3.95,-20.8);
-    for(let i=0;i<3;i++){box(room,3.4,1.1,.08,['#ff8a86','#f6a050','#c79bff'][i],13.9+i*4.25,6.2,-20.82);box(room,2.8,.12,.09,'#bfc5bb',13.9+i*4.25,5.25,-20.82);}
-    this.boardLabel=this.label('board-label',`v${PRODUCT.next} · ${dDay()}`,new THREE.Vector3(18.2,8.2,-20.75));
-    this.label('wall-label','개발실',new THREE.Vector3(-29.3,9.8,-8),true);
-    this.label('wall-label','회의실',new THREE.Vector3(18,11.1,-21.2),true);
-    this.label('wall-label server','서버실',new THREE.Vector3(-29.2,7.3,11),true);
+    const board=group(room,18.2,7.1,-21);
+    box(board,15.8,6.3,.4,'#34334f',0,0,-.3);box(board,15.1,5.6,.22,'#f4efe0');
+    box(board,15.7,.2,.8,'#aaa8b8',0,-3.15,.2);
+    for(let i=0;i<3;i++){box(board,3.4,1.1,.08,['#ff8a86','#f6a050','#c79bff'][i],-4.3+i*4.25,-.9,.18);box(board,2.8,.12,.09,'#bfc5bb',-4.3+i*4.25,-1.85,.18);}
+    this.boardLabel=this.surfaceLabel('board-label',`v${PRODUCT.next} · ${dDay()}`,board,{y:1.3,z:.13,width:13,height:1.8});
+    this.surfaceLabel('wall-label','개발실',sideWall,{x:.57,y:3.8,z:-8,width:10,height:2.6,rotation:Math.PI/2});
+    this.surfaceLabel('wall-label','회의실',backWall,{x:5.2,y:3.2,z:.57,width:9.5,height:2.6});
+    this.surfaceLabel('wall-label server','서버실',sideWall,{x:.57,y:3.8,z:11,width:10,height:2.6,rotation:Math.PI/2});
     // A quiet server-room edge includes real Mini Dungeon props.
     this.addProp('barrel',{h:2.4},-27,0,5.5);this.addProp('rocks',{h:1.3,w:3},28,0,19);
   }
@@ -105,7 +107,7 @@ export class OfficeScene {
         this.mug(actor.root,-1.25,2.15,.7,'#f4efe0');
       }
       this.crewActors.push(actor);this.register(actor,`crew-${i}`,()=>`${person.role} · ${actor.status}`);
-      this.label('name-label',person.role,actor.root,false,5.15);
+      this.label('name-label',person.role,actor.root,5.15);
       this.onCrew(i,actor.status);this.bubble(actor,actor.status,4.5,{fixed:this.reduced});
     });
     const meeting=mini(1,'#5263a4',4.3);this.scene.add(meeting.root);meeting.root.position.set(18,.4,-3.3);meeting.root.rotation.y=Math.PI;meeting.setAction('sit');meeting.mixer.update(.02);this.mixers.push(meeting.mixer);this.meeting=meeting;
@@ -128,10 +130,10 @@ export class OfficeScene {
     }
     for(let z=4.6;z<22;z+=2.2)box(this.scene,.35,.04,1.25,'#f5c542',9.8,.13,z,true);
     this.hero=hero();this.scene.add(this.hero.root);this.hero.root.position.set(6.5,0,14.7);this.hero.root.rotation.y=Math.PI/2;this.hero.home=this.hero.root.position.clone();this.mixers.push(this.hero.mixer);
-    this.register(this.hero,'hero',()=> '방어선은 내가 지킨다');this.label('name-label hero','HERO · MDRM',this.hero.root,false,6.5);
+    this.register(this.hero,'hero',()=> '방어선은 내가 지킨다');this.label('name-label hero','HERO · MDRM',this.hero.root,6.5);
     this.bubble(this.hero,'오늘도 이상 무!',5,{fixed:this.reduced});
     this.pet=robot();this.scene.add(this.pet.root);this.pet.root.position.set(2.7,0,18.7);this.pet.root.rotation.y=Math.PI/3;this.pet.home=this.pet.root.position.clone();
-    this.register(this.pet,'pet',()=> '삐빅!');this.label('name-label pet','PET · AGENT',this.pet.root,false,4.8);this.bubble(this.pet,'삐빅!',4,{fixed:this.reduced});
+    this.register(this.pet,'pet',()=> '삐빅!');this.label('name-label pet','PET · AGENT',this.pet.root,4.8);this.bubble(this.pet,'삐빅!',4,{fixed:this.reduced});
     // A voxel fissure, painted light and emissive geometry keep the one-sun lighting setup.
     const rift=group(this.scene,27,0,3.4);this.rift=rift;
     for(const [x,y,w,h] of [[-2.3,3,1.5,6],[2.3,3.7,1.5,7.4],[-.7,7,1.8,1.4],[1.2,7.6,1.7,1.3]])box(rift,w,h,1.4,'#54486d',x,y,0);
@@ -151,7 +153,7 @@ export class OfficeScene {
       if(actor.mixer)this.mixers.push(actor.mixer);
       this.register(actor,`issue-${issue.id}`,()=>`${issueLabel(issue)} · ${GRADES[issue.grade].ko} · ${targetVersion(issue)}에서 퇴치 예정`);
       this.monsters.push(actor);
-      const el=this.label('monster-label','',actor.root,false,actor.height+1.1);
+      const el=this.label('monster-label','',actor.root,actor.height+1.1);
       const badge=document.createElement('span');badge.className='grade-badge';badge.style.setProperty('--grade-color',GRADES[issue.grade].color);badge.textContent=GRADES[issue.grade].en;
       const name=document.createElement('span');name.textContent=issue.name;el.append(badge,name);
     });
@@ -169,10 +171,18 @@ export class OfficeScene {
     Object.keys(GRADES).forEach(grade=>{const m=monster(grade);m.mixer?.update(.2);thumbs[grade]=thumbnail(renderer,m.root);});
     renderer.dispose();renderer.forceContextLoss();this.thumbnails=thumbs;
   }
-  label(className,text,target,skew=false,height=0){
-    const el=document.createElement('div');el.className='overlay '+className;
-    if(skew){const inner=document.createElement('span');inner.className='wall-label-inner';inner.textContent=text;el.append(inner);}else el.textContent=text;
+  label(className,text,target,height=0){
+    const el=document.createElement('div');el.className='overlay '+className;el.textContent=text;
     this.overlay.append(el);this.labels.push({el,target,height});return el;
+  }
+  surfaceLabel(className,text,parent,{x=0,y=0,z=0,width,height,rotation=0}){
+    // A local plane follows the same transform as its wall or whiteboard.
+    const anchor=group(parent,x,y,z);anchor.rotation.y=rotation;
+    const el=document.createElement('div');el.className='overlay surface-label '+className;el.textContent=text;
+    const pixelWidth=width*24,pixelHeight=height*24;
+    el.style.width=`${pixelWidth}px`;el.style.height=`${pixelHeight}px`;
+    const corners=[[-width/2,height/2,0],[width/2,height/2,0],[-width/2,-height/2,0]].map(p=>new THREE.Vector3(...p));
+    this.overlay.append(el);this.surfaceLabels.push({el,anchor,corners,pixelWidth,pixelHeight,point:new THREE.Vector3()});return el;
   }
   bubble(actor,text,duration=3,{fixed=false,battle=false}={}){
     let entry=this.bubbles.find(b=>b.actor===actor);
@@ -304,9 +314,19 @@ export class OfficeScene {
     return {x:(this.projectVector.x*.5+.5)*this.width,y:(-.5*this.projectVector.y+.5)*this.height,z:this.projectVector.z};
   }
   updateOverlays(){
-    const bubbles=[];
+    const occupied=[];
     for(const entry of this.labels){const p=this.project(entry.target,entry.height);entry.el.style.transform=`translate(${Math.round(p.x)}px,${Math.round(p.y)}px) translate(-50%,-100%)`;}
-    // Keep crisp HTML balloons close to their actors; test nearby slots before lifting them.
+    for(const entry of this.surfaceLabels){
+      const [tl,tr,bl]=entry.corners.map(p=>this.project(entry.point.copy(p).applyMatrix4(entry.anchor.matrixWorld)));
+      // Orthographic projection is affine: map the entire HTML rectangle to the surface.
+      entry.el.style.transform=`matrix(${(tr.x-tl.x)/entry.pixelWidth},${(tr.y-tl.y)/entry.pixelWidth},${(bl.x-tl.x)/entry.pixelHeight},${(bl.y-tl.y)/entry.pixelHeight},${tl.x},${tl.y})`;
+      if(entry.el.offsetWidth){
+        const xs=[tl.x,tr.x,bl.x,tr.x+bl.x-tl.x],ys=[tl.y,tr.y,bl.y,tr.y+bl.y-tl.y];
+        const left=Math.min(...xs),right=Math.max(...xs),top=Math.min(...ys),bottom=Math.max(...ys);
+        occupied.push({x:(left+right)/2,y:bottom,w:right-left,h:bottom-top});
+      }
+    }
+    // Keep balloons near actors while leaving wall signs and the board heading readable.
     for(const entry of this.bubbles){
       if(entry.el.hidden)continue;const p=this.project(entry.target,entry.height);const w=Math.min(this.width-14,entry.el.offsetWidth),h=entry.el.offsetHeight;
       const baseX=Math.max(w/2+6,Math.min(this.width-w/2-6,p.x)),baseY=Math.max(h+8,p.y);
@@ -314,11 +334,11 @@ export class OfficeScene {
       for(const dy of [0,-h-8,h+8,-2*(h+8)])for(const dx of [0,-w*.65,w*.65,-w,w,-w*1.5,w*1.5]){
         const x=Math.max(w/2+6,Math.min(this.width-w/2-6,baseX+dx)),y=Math.max(h+5,Math.min(this.height-12,baseY+dy));
         let overlap=0;
-        for(const b of bubbles){const ox=Math.max(0,(w+b.w)/2+5-Math.abs(x-b.x)),oy=Math.max(0,(h+b.h)/2+5-Math.abs(y-h/2-(b.y-b.h/2)));overlap+=ox*oy;}
+        for(const b of occupied){const ox=Math.max(0,(w+b.w)/2+5-Math.abs(x-b.x)),oy=Math.max(0,(h+b.h)/2+5-Math.abs(y-h/2-(b.y-b.h/2)));overlap+=ox*oy;}
         const score=(x-baseX)**2+(y-baseY)**2*1.4+overlap*1000;
         if(score<best.score)best={x,y,score};
       }
-      const {x,y}=best;bubbles.push({x,y,w,h});entry.el.style.setProperty('--tail-left',`${Math.max(8,Math.min(w-14,p.x-x+w/2-3))}px`);entry.el.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px) translate(-50%,-100%)`;
+      const {x,y}=best;occupied.push({x,y,w,h});entry.el.style.setProperty('--tail-left',`${Math.max(8,Math.min(w-14,p.x-x+w/2-3))}px`);entry.el.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px) translate(-50%,-100%)`;
     }
   }
   render(){

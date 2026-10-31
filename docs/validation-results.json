@@ -758,5 +758,59 @@
       ],
       "errors": []
     }
+  },
+  "surface_labels_local": {
+    "date": "2026-10-31T04:53:27.091Z",
+    "url": "http://127.0.0.1:4173/",
+    "browser": "156.0.8078.74",
+    "checks": [
+      {
+        "name": "1280px initial render, local assets, thumbnails and KST"
+      },
+      {
+        "name": "10-second autonomous activity and stable scene layout",
+        "fps": 60.1,
+        "minimumOneSecondFPS": 60,
+        "metrics": {
+          "walk": 895,
+          "typing": 878,
+          "led": 25,
+          "melee": 2,
+          "breath": 1,
+          "combat": 3
+        }
+      },
+      {
+        "name": "live reduced-motion change freezes animation and simulation"
+      },
+      {
+        "name": "raycast hero, pet, rack, developer and monster status"
+      },
+      {
+        "name": "all tabs, ArrowLeft/Right, Home/End and visible panels"
+      },
+      {
+        "name": "901px, 900px and 390px responsive layout; mobile labels hidden; all mobile tabs fit"
+      },
+      {
+        "name": "wall and whiteboard text follow surface angles across resize; board heading avoids bubbles"
+      },
+      {
+        "name": "initial reduced-motion preference: static frame, fixed bubbles, no combat"
+      },
+      {
+        "name": "ISSUES addition updates scene, sidebar, both timelines, bestiary and count"
+      },
+      {
+        "name": "grade change propagates to monster form and all information panels"
+      },
+      {
+        "name": "released state removes monsters and grays completed issues"
+      },
+      {
+        "name": "zero console errors, page errors and HTTP errors in all scenarios"
+      }
+    ],
+    "errors": []
   }
 }

@@ -24,6 +24,26 @@ async function openPage({width=1280,height=1000,reduced='no-preference',source,d
 const snapshot=page=>page.evaluate(()=>window.__OFFICE_DEBUG__.snapshot());
 const noOverflow=async page=>assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'horizontal overflow');
 const screenshot=async(page,name,fullPage=true)=>page.screenshot({path:`test-results/${name}.png`,fullPage});
+async function checkSurfaceLabels(page){
+ const labels=await page.locator('.surface-label').evaluateAll(nodes=>nodes.map(el=>{
+  const style=getComputedStyle(el),matrix=new DOMMatrixReadOnly(style.transform);
+  return {text:el.textContent,visible:style.display!=='none',angle:Math.atan2(matrix.b,matrix.a)*180/Math.PI,verticalTilt:matrix.c};
+ }));
+ assert.equal(labels.length,4);
+ for(const label of labels.filter(l=>l.visible)){
+  const angle=['개발실','서버실'].includes(label.text)?-30:30;
+  assert.ok(Math.abs(label.angle-angle)<.01,`surface orientation: ${label.text}`);
+  assert.ok(Math.abs(label.verticalTilt)<.001,`surface vertical edge: ${label.text}`);
+ }
+ const overlaps=await page.evaluate(()=>{
+  const label=document.querySelector('.board-label');if(!label.offsetWidth)return [];
+  const a=label.getBoundingClientRect();
+  return [...document.querySelectorAll('.bubble:not([hidden])')].filter(el=>{
+   const b=el.getBoundingClientRect();return Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1;
+  }).map(el=>el.textContent);
+ });
+ assert.deepEqual(overlaps,[],'speech bubbles cover the whiteboard heading');
+}
 try{
  const {context,page}=await openPage();
  await noOverflow(page);
@@ -36,6 +56,7 @@ try{
  assert.ok(await page.locator('[data-thumbnail]').evaluateAll((images,size)=>images.every(i=>i.complete&&i.naturalWidth===size&&i.naturalHeight===size),RENDERING.thumbnailSize));
  assert.equal((await snapshot(page)).target.width,1752);
  assert.equal(await page.locator('#office-canvas').evaluate(canvas=>canvas.width),2*(await snapshot(page)).viewport.width);
+ await checkSurfaceLabels(page);
  await screenshot(page,'desktop');
  record('1280px initial render, local assets, thumbnails and KST');
  await page.evaluate(()=>{window.__qaFrameTimes=[];const sample=t=>{window.__qaFrameTimes.push(t);window.__qaFrameRequest=requestAnimationFrame(sample);};window.__qaFrameRequest=requestAnimationFrame(sample);});
@@ -49,6 +70,7 @@ try{
  assert.ok(fps>=30&&minimumOneSecondFPS>=30,`FPS below 30: average=${fps}, minimum second=${minimumOneSecondFPS}`);
  assert.equal(await page.locator('#activity-log li').count(),7);
  assert.equal(before.viewport.height,after.viewport.height,'scene height changed while logs filled');
+ await checkSurfaceLabels(page);
  record('10-second autonomous activity and stable scene layout',{fps:Math.round(fps*10)/10,minimumOneSecondFPS,metrics:after.metrics});
  await screenshot(page,'desktop-active');
  // Stop motion for deterministic hit targets and accessible tab review.
@@ -81,10 +103,11 @@ try{
  record('all tabs, ArrowLeft/Right, Home/End and visible panels');
  await page.getByRole('tab',{name:'이력'}).click();
  for(const width of [901,900,390]){
-  await page.setViewportSize({width,height:844});await page.waitForTimeout(120);await noOverflow(page);
+  await page.setViewportSize({width,height:844});await page.waitForTimeout(120);await noOverflow(page);await checkSurfaceLabels(page);
   if(width===390){assert.equal(await page.locator('.name-label').first().evaluate(e=>getComputedStyle(e).display),'none');assert.equal(await page.locator('.monster-label').first().evaluate(e=>getComputedStyle(e).display),'none');assert.equal(await page.locator('.wall-label').first().evaluate(e=>getComputedStyle(e).display),'none');}
  }
  await screenshot(page,'mobile');for(const id of ['bestiary','crew','party']){await page.locator(`#tab-${id}`).click();await noOverflow(page);}record('901px, 900px and 390px responsive layout; mobile labels hidden; all mobile tabs fit');
+ record('wall and whiteboard text follow surface angles across resize; board heading avoids bubbles');
  await context.close();
  const reduced=await openPage({width:390,height:844,reduced:'reduce'});
  const fixedA=await snapshot(reduced.page);await reduced.page.waitForTimeout(1200);const fixedB=await snapshot(reduced.page);
