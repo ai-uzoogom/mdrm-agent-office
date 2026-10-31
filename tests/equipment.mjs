@@ -23,9 +23,10 @@ try{
  assert.ok(Math.hypot(...data.reports[1].sword.map((v,i)=>v-data.reports[0].sword[i]))>.5,'attack did not move the sword hand');
  assert.ok(Math.hypot(...data.reports[2].shield.map((v,i)=>v-data.reports[0].shield[i]))>.5,'guard did not move the shield hand');
  for(const sample of data.guardSamples){
-  assert.ok(sample.forward>.85,'shield does not face the attacker');assert.ok(sample.hand[0]>.2,'left hand crossed to the face center');if(sample.amount===1)assert.ok(sample.hand[2]>.16,'left hand did not reach forward');
+  assert.ok(sample.upright>Math.cos(Math.PI/18),'shield tilts down more than 10 degrees');assert.ok(sample.forward>.85,'shield does not face the attacker');assert.ok(sample.hand[0]>.2,'left hand crossed to the face center');if(sample.amount===1)assert.ok(sample.hand[2]>.16,'left hand did not reach forward');
   assert.equal(sample.blocksFace,false,'shield blocks the face');assert.equal(sample.helmetIntersections,0,`shield intersects the helmet at guard ${sample.amount}`);assert.deepEqual(sample.armScale,[1,1,1]);
  }
+ assert.ok(data.guardReset<1e-10,'shoulder did not return to its idle position');
  assert.equal(data.female,'character-female-e');assert.equal(data.phoneParent,'arm-right');assert.equal(data.waves,true);
  for(const sample of data.mouthSamples){assert.ok(sample.gap<.005,'megaphone intake missed the mouth');assert.deepEqual(sample.hand,data.handAnchor,'prop left the hand');assert.deepEqual(sample.armScale,data.armScale,'arm was stretched');}
  assert.deepEqual(errors,[]);await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/character-equipment.png',fullPage:true});

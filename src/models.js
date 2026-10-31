@@ -204,7 +204,7 @@ export function hero() {
   const shield=prop('shield-rectangle',{h:.28,w:.25});shieldPivot.add(shield);shield.position.set(0,-.105,.055);
   box(shieldPivot,.14,.20,.018,'#4168bd',0,.035,.124);
   box(shieldPivot,.024,.12,.012,'#f5c542',0,.035,.139);box(shieldPivot,.09,.024,.012,'#f5c542',0,.055,.140);
-  const rest={right:bones['arm-right'].quaternion.clone(),left:bones['arm-left'].quaternion.clone()};
+  const rest={right:bones['arm-right'].quaternion.clone(),left:bones['arm-left'].quaternion.clone(),leftPosition:bones['arm-left'].position.clone()};
   // Keep the shield on the left side. The left hand reaches forward from the
   // shoulder; it never crosses to the visor's centerline.
   const guardAim=group(bones.torso,.30,-.025,.30),guardDirection=shieldPivot.position.clone().applyQuaternion(rest.left).normalize();
@@ -212,7 +212,9 @@ export function hero() {
   actor.shieldImpact=group(shieldPivot,0,.035,.15);actor.visor=group(head,0,.19,.252);
   actor.setEquipmentPose=(swing=0,guard=0)=>{
     bones['arm-right'].quaternion.copy(rest.right);bones['arm-right'].rotateY(.9*swing);bones['arm-right'].rotateZ(-.55*swing);
-    const arm=bones['arm-left'];arm.quaternion.copy(rest.left);
+    const arm=bones['arm-left'];arm.quaternion.copy(rest.left);arm.position.copy(rest.leftPosition);
+    // Protract the shoulder within the breastplate instead of pitching the shield down.
+    arm.position.z+=.075*guard;
     if(guard>0){
       actor.root.updateMatrixWorld(true);guardAim.getWorldPosition(guardTarget);arm.parent.worldToLocal(guardTarget).sub(arm.position).normalize();
       // Reach under the helmet rim before settling into the forward guard.
@@ -221,8 +223,8 @@ export function hero() {
     }
     // Aim the blade into the invasion lane while retaining the grip on the hand.
     faceInModelSpace(actor,swordPivot,1.65*swing,0,.18);
-    // Tip the upper rim away early, including while the idle torso/head sway.
-    faceInModelSpace(actor,shieldPivot,.52*Math.min(1,guard*2.5));
+    // Keep the shield upright; angle its inner edge forward to clear the helmet.
+    faceInModelSpace(actor,shieldPivot,.12*Math.min(1,guard*2.5),.45*guard);
   };
   actor.sword=swordPivot;actor.shield=shieldPivot;return actor;
 }
