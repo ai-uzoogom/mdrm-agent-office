@@ -67,10 +67,10 @@ export class OfficeScene {
     this.addProp('kitchenCoffeeMachine',{h:2,w:2.2,d:1.8},-26.1,3,-18.7,Math.PI);
     this.addProp('rugRectangle',{h:.12,w:5.8,d:7},-25.2,.12,-4);
     for(const [x,z,h] of [[-27,18,5],[1,-19,4.7],[28,-19.8,4.5],[7,-18,3.9]])this.addProp('pottedPlant',{h},x,0,z);
-    this.addProp('table',{h:3.3,w:11,d:6.5},18,0,-8.5);
-    this.meetingLaptop=this.addProp('laptop',{h:1.55,w:2.6,d:2.2},18,3.3,-6.4);
+    this.meetingTable=this.addProp('table',{h:2.55,w:11,d:6.5},18,0,-8.5);
+    this.meetingLaptop=this.addProp('laptop',{h:1.55,w:2.6,d:2.2},18,2.55,-6.4);
     this.meetingDisplay=attachDisplay(this.meetingLaptop,'laptop',{color:'#c79bff'});this.meetingDisplay.update(0,'일정 점검');this.displays.push(this.meetingDisplay);
-    box(room,2,.07,1.4,'#e5e4d8',14.6,3.4,-8.1);box(room,1.5,.07,1,'#c79bff',21,3.4,-9.5);
+    box(room,2,.07,1.4,'#e5e4d8',14.6,2.65,-8.1);box(room,1.5,.07,1,'#c79bff',21,2.65,-9.5);
     for(const [x,z,rot] of [[11.1,-8.5,-Math.PI/2],[24.8,-8.5,Math.PI/2],[18,-3.7,0],[18,-13,Math.PI]]){
       const chair=this.addProp('chairCushion',{h:rot===0?4:3.7,w:2.6,d:2.8},x,0,z,rot);if(rot===0)this.meetingChair=chair;
     }
@@ -93,15 +93,15 @@ export class OfficeScene {
     CREW.forEach((person,i)=>{
       const actor=crewCharacter(person,i);this.scene.add(actor.root);this.mixers.push(actor.mixer);actor.index=i;actor.statusIndex=0;actor.status=person.statuses?.[0]??person.stops[0];actor.data=person;
       if(!person.walker){
-        const [x,z]=desks[i];this.addProp('desk',{h:3.15,w:8.7,d:3.7},x,0,z,Math.PI);
-        actor.monitor=this.addProp('computerScreen',{h:2.45,w:3.7,d:.95},x,3.15,z-.6);
+        const [x,z]=desks[i];actor.desk=this.addProp('desk',{h:2.4,w:8.7,d:3.7},x,0,z);
+        actor.monitor=this.addProp('computerScreen',{h:2.45,w:3.7,d:.95},x,2.4,z-.6);
         actor.display=attachDisplay(actor.monitor,'computerScreen',{color:person.screen,seed:i});actor.display.update(0,actor.status);this.displays.push(actor.display);
-        actor.keyboard=this.addProp('computerKeyboard',{h:.13,w:2.8,d:.9},x,3.2,z+.95);
-        this.addProp('computerMouse',{h:.18,w:.5,d:.7},x+2,3.2,z+.95);
-        this.mug(this.scene,x+3.1,3.2,z+.6,'#e9dbbe');
-        seatAtKeyboard(actor,{x,z:z+2,seatY:1.7,keyY:3.33,keyZ:z+.95,phase:i*1.7});
+        actor.keyboard=this.addProp('computerKeyboard',{h:.13,w:2.8,d:.9},x,2.45,z+1.3);
+        this.addProp('computerMouse',{h:.18,w:.5,d:.7},x+2,2.45,z+1.3);
+        this.mug(this.scene,x+3.1,2.45,z+.6,'#e9dbbe');
+        seatAtKeyboard(actor,{x,z:z+2,seatY:1.7,keyY:2.58,keyZ:z+1.3,phase:i*1.7,frontEdge:new THREE.Box3().setFromObject(actor.desk).max.z});
         actor.chair=this.addProp('chairDesk',{h:4.1,w:2.5,d:2.5},x,0,actor.root.position.z,Math.PI);
-        if(i===0||i===2)this.addProp('plantSmall1',{h:.9},x-3.3,3.2,z-.1);
+        if(i===0||i===2)this.addProp('plantSmall1',{h:.9},x-3.3,2.45,z-.1);
       } else if(i===4){
         actor.path=[{x:22,z:-17.1,stop:0},{x:27.9,z:-17.1},{x:27.9,z:-8.1,stop:1},{x:27.9,z:-17.1}];actor.root.position.set(22,0,-17.1);actor.pathIndex=1;actor.wait=.45;
       } else if(person.behavior==='encourage'){
@@ -115,7 +115,7 @@ export class OfficeScene {
       this.label('name-label',person.role,actor.root,5.15);
       this.onCrew(i,actor.status);this.bubble(actor,actor.status,4.5,{fixed:this.reduced});
     });
-    const meeting=mini(1,'#5263a4',4.5);this.scene.add(meeting.root);seatAtKeyboard(meeting,{x:18,z:-4.2,seatY:1.85,keyY:3.43,keyZ:-5.85,spread:.48,phase:2.1});this.meetingChair.position.z=meeting.root.position.z;this.mixers.push(meeting.mixer);this.meeting=meeting;
+    const meeting=mini(1,'#5263a4',4.5);this.scene.add(meeting.root);seatAtKeyboard(meeting,{x:18,z:-4.2,seatY:1.85,keyY:2.68,keyZ:-5.85,spread:.48,phase:2.1,frontEdge:new THREE.Box3().setFromObject(this.meetingTable).max.z});this.meetingChair.position.z=meeting.root.position.z;this.mixers.push(meeting.mixer);this.meeting=meeting;
     this.register(meeting,'meeting',()=>`v${PRODUCT.next} 일정 점검 · 이슈 ${activeIssues().length}건 확인`);
     this.bubble(meeting,`v${PRODUCT.next} 일정 점검`,4,{fixed:this.reduced});
   }

@@ -135,7 +135,7 @@ function faceInModelSpace(actor,mount,x=0,y=0,z=0) {
   const boneFrame=mount.parent.getWorldQuaternion(new THREE.Quaternion());
   mount.quaternion.copy(modelFrame.multiply(boneFrame).invert()).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)));
 }
-export function seatAtKeyboard(actor,{x,z,seatY,keyY,keyZ,spread=.62,phase=0}){
+export function seatAtKeyboard(actor,{x,z,seatY,keyY,keyZ,spread=.62,phase=0,frontEdge}){
   clearHandTools(actor);
   actor.root.position.set(x,0,z);actor.root.rotation.y=Math.PI;actor.setAction('sit');actor.mixer.update(.02);actor.root.updateMatrixWorld(true);
   actor.root.position.y+=seatY-actor.bones.torso.getWorldPosition(new THREE.Vector3()).y;
@@ -146,6 +146,18 @@ export function seatAtKeyboard(actor,{x,z,seatY,keyY,keyZ,spread=.62,phase=0}){
   const first=arms[0],reach=first.hand.getWorldPosition(target).distanceTo(first.bone.getWorldPosition(shoulder));
   const distance=Math.sqrt(Math.max(.2,reach*reach-(keyY+.34-shoulder.y)**2));
   actor.root.position.z+=keyZ+distance-shoulder.z;
+  // Hand reach must never pull the seated torso into the desktop.
+  // Knees use the open underside; the torso and shirt remain outside.
+  if(frontEdge!==undefined){
+    actor.root.updateMatrixWorld(true);let bodyFront=Infinity;const point=new THREE.Vector3();
+    actor.model.traverse(mesh=>{
+      if(!mesh.isSkinnedMesh)return;mesh.skeleton.update();const {skinIndex,skinWeight}=mesh.geometry.attributes;
+      const joints=[mesh.skeleton.bones.indexOf(actor.bones.torso)];
+      for(const i of new Set(mesh.geometry.index.array))if([0,1,2,3].some(k=>joints.includes(skinIndex.getComponent(i,k))&&skinWeight.getComponent(i,k)>.9))bodyFront=Math.min(bodyFront,mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld).z);
+    });
+    actor.bones.torso.children.filter(n=>n.isMesh).forEach(mesh=>{bodyFront=Math.min(bodyFront,new THREE.Box3().setFromObject(mesh).min.z);});
+    actor.root.position.z+=Math.max(0,frontEdge+.15-bodyFront);
+  }
   actor.root.updateMatrixWorld(true);arms.forEach(a=>{a.reach=a.hand.getWorldPosition(target).distanceTo(a.bone.getWorldPosition(shoulder));});
   const fingertip=new THREE.Vector3();
   const headRest=actor.bones.head.quaternion.clone(),nod=new THREE.Quaternion(),axis=new THREE.Vector3(1,0,0);
