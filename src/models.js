@@ -163,16 +163,36 @@ export function crewCharacter(person,index) {
     const wave=new THREE.Mesh(new THREE.TorusGeometry(.12+i*.035,.008,4,12),new THREE.MeshBasicMaterial({color:'#f5c542',transparent:true,opacity:.7,depthWrite:false}));
     wave.position.z=i*.12;wave.castShadow=false;waves.add(wave);
   }
-  const rest=actor.bones['arm-right'].quaternion.clone();
+  const arm=actor.bones['arm-right'],rest=arm.quaternion.clone();
+  // The original mouth is at head-local (0, .075, .162). Leave a small gap
+  // before the lips. The narrow end of the horn, rather than its bell, meets it.
+  const mouth=group(actor.bones.head,0,.075,.168),mouthpiece=group(phone,0,.12,-.05);
+  const restHand=phone.position.clone().applyQuaternion(rest).normalize();
+  const reachSquared=phone.position.lengthSq(),offset=mouthpiece.position.clone();
+  const headFrame=new THREE.Quaternion(),pose=new THREE.Quaternion(),correction=new THREE.Quaternion();
+  const target=new THREE.Vector3(),delta=new THREE.Vector3(),inHead=new THREE.Vector3();
   actor.setEncouragementPose=(time,calling)=>{
-    const arm=actor.bones['arm-right'];
-    if(calling){arm.quaternion.copy(rest);arm.rotateZ(-1.55);arm.rotateY(.65);arm.rotateX(Math.sin(time*7)*.04);}
-    faceInModelSpace(actor,phone,0,.12,0);
+    if(calling){
+      actor.root.updateMatrixWorld(true);
+      headFrame.copy(arm.parent.getWorldQuaternion(pose)).invert().multiply(actor.bones.head.getWorldQuaternion(correction));
+      mouth.getWorldPosition(delta);arm.parent.worldToLocal(delta).sub(arm.position);
+      inHead.copy(delta).applyQuaternion(correction.copy(headFrame).invert());
+      // Solve the shoulder–hand–mouth triangle at the original arm length.
+      // For a pitch p: dot(delta, rotated intake offset) = a*cos(p)+b*sin(p).
+      const a=inHead.y*offset.y+inHead.z*offset.z,b=-inHead.y*offset.z+inHead.z*offset.y;
+      const phase=Math.atan2(b,a),arc=Math.acos(THREE.MathUtils.clamp((delta.lengthSq()+offset.lengthSq()-reachSquared)/(2*Math.hypot(a,b)),-1,1));
+      const pitches=[phase-arc,phase+arc].map(p=>Math.atan2(Math.sin(p),Math.cos(p)));
+      const pitch=pitches.reduce((best,p)=>Math.abs(p)<Math.abs(best)?p:best);
+      pose.setFromAxisAngle(new THREE.Vector3(1,0,0),pitch).premultiply(headFrame);
+      target.copy(offset).applyQuaternion(pose);target.subVectors(delta,target).normalize();
+      correction.setFromUnitVectors(restHand,target);arm.quaternion.copy(rest).premultiply(correction);
+      phone.quaternion.copy(arm.quaternion).invert().multiply(pose);
+    }else faceInModelSpace(actor,phone,0,.12,0);
     waves.visible=calling;
     waves.children.forEach((wave,i)=>{const pulse=(time*1.8+i/3)%1;wave.scale.setScalar(.8+pulse*.5);wave.material.opacity=.65*(1-pulse*.65);});
     actor.calling=calling;
   };
-  actor.phone=phone;actor.waves=waves;actor.setEncouragementPose(0,true);return actor;
+  actor.phone=phone;actor.mouth=mouth;actor.mouthpiece=mouthpiece;actor.waves=waves;actor.setEncouragementPose(0,true);return actor;
 }
 export function robot() {
   const root=group(), body=group(root);

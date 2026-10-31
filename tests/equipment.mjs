@@ -21,7 +21,9 @@ try{
  assert.ok(Math.hypot(...data.reports[1].sword.map((v,i)=>v-data.reports[0].sword[i]))>.5,'attack did not move the sword hand');
  assert.ok(Math.hypot(...data.reports[2].shield.map((v,i)=>v-data.reports[0].shield[i]))>.5,'guard did not move the shield hand');
  assert.equal(data.female,'character-female-e');assert.equal(data.phoneParent,'arm-right');assert.equal(data.waves,true);
+ for(const sample of data.mouthSamples){assert.ok(sample.gap<.005,'megaphone intake missed the mouth');assert.deepEqual(sample.hand,data.handAnchor,'prop left the hand');assert.deepEqual(sample.armScale,data.armScale,'arm was stretched');}
  assert.deepEqual(errors,[]);await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/character-equipment.png',fullPage:true});
- await writeFile('test-results/equipment-report.json',JSON.stringify({date:new Date().toISOString(),poses:data.reports,animationFrames:data.frames.length,gripsStayAttached:true,originalHairHidden:true,coordinator:data.female,errors},null,2));
- console.log('PASS helmet, 60 animated hand-grip samples, attack/guard poses, and female coordinator prop');
+ await page.locator('article').last().screenshot({path:'test-results/coordinator-mouth.png'});
+ await writeFile('test-results/equipment-report.json',JSON.stringify({date:new Date().toISOString(),poses:data.reports,animationFrames:data.frames.length,gripsStayAttached:true,originalHairHidden:true,coordinator:data.female,mouthAlignment:{frames:data.mouthSamples.length,maximumGap:Math.max(...data.mouthSamples.map(s=>s.gap)),handAttached:true,armUnstretched:true},errors},null,2));
+ console.log('PASS helmet, 60 hand-grip frames, attack/guard, and 90 mouth-aligned megaphone frames without stretching');
 }finally{await browser.close();}
