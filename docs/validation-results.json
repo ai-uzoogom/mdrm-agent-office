@@ -1,0 +1,287 @@
+{
+  "environment": {
+    "platform": "darwin arm64",
+    "browser": "156.0.8078.74",
+    "devicePixelRatio": 2
+  },
+  "unit_tests": {
+    "passed": 7,
+    "failed": 0
+  },
+  "browser": {
+    "date": "2026-10-31T04:18:28.685Z",
+    "browser": "156.0.8078.74",
+    "checks": [
+      {
+        "name": "1280px initial render, local assets, thumbnails and KST"
+      },
+      {
+        "name": "10-second autonomous activity and stable scene layout",
+        "fps": 60,
+        "minimumOneSecondFPS": 60,
+        "metrics": {
+          "walk": 897,
+          "typing": 435,
+          "led": 25,
+          "melee": 2,
+          "breath": 1,
+          "combat": 3
+        }
+      },
+      {
+        "name": "live reduced-motion change freezes animation and simulation"
+      },
+      {
+        "name": "raycast hero, pet, rack, developer and monster status"
+      },
+      {
+        "name": "all tabs, ArrowLeft/Right, Home/End and visible panels"
+      },
+      {
+        "name": "901px, 900px and 390px responsive layout; mobile labels hidden; all mobile tabs fit"
+      },
+      {
+        "name": "initial reduced-motion preference: static frame, fixed bubbles, no combat"
+      },
+      {
+        "name": "ISSUES addition updates scene, sidebar, both timelines, bestiary and count"
+      },
+      {
+        "name": "grade change propagates to monster form and all information panels"
+      },
+      {
+        "name": "released state removes monsters and grays completed issues"
+      },
+      {
+        "name": "zero console errors, page errors and HTTP errors in all scenarios"
+      }
+    ],
+    "errors": []
+  },
+  "visibility_and_walking": {
+    "date": "2026-10-31T03:55:31.762Z",
+    "walking": {
+      "seconds": 23,
+      "collisions": [],
+      "observedStops": [
+        "crew-4:일정 점검",
+        "crew-5:커피 타임",
+        "crew-4:보드 업데이트",
+        "crew-5:잠깐 산책",
+        "crew-5:자리 복귀",
+        "crew-5:커피 내리는 중"
+      ]
+    },
+    "visibility": {
+      "actualDocumentHidden": true,
+      "hiddenSeconds": 2,
+      "framesDuringHidden": 0,
+      "simulationDeltaDuringHidden": 0,
+      "resumedDelta": 0.4991000000000005,
+      "events": [
+        {
+          "hidden": true,
+          "elapsed": 0.06,
+          "frames": 4,
+          "metrics": {
+            "walk": 0,
+            "typing": 4,
+            "led": 0,
+            "melee": 0,
+            "breath": 0,
+            "combat": 0
+          }
+        },
+        {
+          "hidden": false,
+          "elapsed": 0.06,
+          "frames": 4,
+          "metrics": {
+            "walk": 0,
+            "typing": 4,
+            "led": 0,
+            "melee": 0,
+            "breath": 0,
+            "combat": 0
+          }
+        }
+      ]
+    }
+  },
+  "native_active_combat_visibility": {
+    "events": [
+      {
+        "hidden": true,
+        "elapsed": 2.2259999999999986,
+        "frames": 134,
+        "metrics": {
+          "walk": 224,
+          "typing": 264,
+          "led": 5,
+          "melee": 1,
+          "breath": 0,
+          "combat": 1
+        }
+      },
+      {
+        "hidden": false,
+        "elapsed": 2.2259999999999986,
+        "frames": 134,
+        "metrics": {
+          "walk": 224,
+          "typing": 264,
+          "led": 5,
+          "melee": 1,
+          "breath": 0,
+          "combat": 1
+        }
+      }
+    ],
+    "now": "visible"
+  },
+  "mobile_tabs": {
+    "width": 390,
+    "tabs": [
+      "bestiary",
+      "crew",
+      "party"
+    ],
+    "horizontalOverflow": false,
+    "errors": []
+  },
+  "asset_integrity": {
+    "verified_files": 29,
+    "missing_dependencies": 0
+  },
+  "resolution_change": {
+    "before": [
+      {
+        "dpr": 2,
+        "width": 1280,
+        "canvas": {
+          "width": 876,
+          "height": 618
+        },
+        "target": {
+          "width": 384,
+          "height": 271
+        }
+      },
+      {
+        "dpr": 2,
+        "width": 390,
+        "canvas": {
+          "width": 352,
+          "height": 345
+        },
+        "target": {
+          "width": 320,
+          "height": 314
+        }
+      }
+    ],
+    "after": {
+      "results": [
+        {
+          "dpr": 2,
+          "width": 1280,
+          "canvas": {
+            "width": 1752,
+            "height": 1236
+          },
+          "target": {
+            "width": 960,
+            "height": 677
+          },
+          "thumb": true,
+          "overflow": false
+        },
+        {
+          "dpr": 2,
+          "width": 390,
+          "canvas": {
+            "width": 704,
+            "height": 690
+          },
+          "target": {
+            "width": 704,
+            "height": 690
+          },
+          "thumb": true,
+          "overflow": false
+        },
+        {
+          "dpr": 1,
+          "width": 1280,
+          "canvas": {
+            "width": 876,
+            "height": 618
+          },
+          "target": {
+            "width": 876,
+            "height": 618
+          },
+          "thumb": true,
+          "overflow": false
+        }
+      ],
+      "errors": []
+    }
+  },
+  "github_pages_preflight": {
+    "date": "2026-10-31T04:28:13.667Z",
+    "url": "http://127.0.0.1:4174/mdrm-agent-office/",
+    "browser": "156.0.8078.74",
+    "checks": [
+      {
+        "name": "1280px initial render, local assets, thumbnails and KST"
+      },
+      {
+        "name": "10-second autonomous activity and stable scene layout",
+        "fps": 60,
+        "minimumOneSecondFPS": 60,
+        "metrics": {
+          "walk": 893,
+          "typing": 869,
+          "led": 25,
+          "melee": 3,
+          "breath": 1,
+          "combat": 4
+        }
+      },
+      {
+        "name": "live reduced-motion change freezes animation and simulation"
+      },
+      {
+        "name": "raycast hero, pet, rack, developer and monster status"
+      },
+      {
+        "name": "all tabs, ArrowLeft/Right, Home/End and visible panels"
+      },
+      {
+        "name": "901px, 900px and 390px responsive layout; mobile labels hidden; all mobile tabs fit"
+      },
+      {
+        "name": "initial reduced-motion preference: static frame, fixed bubbles, no combat"
+      },
+      {
+        "name": "ISSUES addition updates scene, sidebar, both timelines, bestiary and count"
+      },
+      {
+        "name": "grade change propagates to monster form and all information panels"
+      },
+      {
+        "name": "released state removes monsters and grays completed issues"
+      },
+      {
+        "name": "zero console errors, page errors and HTTP errors in all scenarios"
+      }
+    ],
+    "errors": [],
+    "artifact": {
+      "files": 51,
+      "size_mib": 8.02,
+      "published": false
+    }
+  }
+}

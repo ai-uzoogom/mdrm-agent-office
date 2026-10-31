@@ -1,0 +1,16 @@
+{
+  "name": "mdrm-agent-office",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 4173 --bind 127.0.0.1",
+    "test": "node --test tests/data.test.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "test:visibility": "node tests/visibility.mjs",
+    "prepare:pages": "node scripts/prepare-pages.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

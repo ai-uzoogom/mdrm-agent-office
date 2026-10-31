@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0c0a1d">
+  <meta name="description" content="더 단단한 내일을 만드는 작은 오피스. MDRM의 릴리스 여정을 담은 아이소메트릭 픽셀 디오라마.">
+  <title>MDRM AGENT OFFICE · Mantech</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
+  <script type="module" src="./src/main.js"></script>
+</head>
+<body>
+  <svg class="svg-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M4 3h16v11h-2v3h-3v3h-3v2H9v-2H6v-3H4V3Z" fill="currentColor"/><path d="M8 7h8v7h-2v3h-3v-3H8Z" fill="var(--win-deep)"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M6 3h12v3h3v12h-3v3H6v-3H3V6h3V3Zm1 3v2H6v8h2v2h8v-2h2V8h-2V6H7Zm4 2h3v5h3v3h-6V8Z" fill="currentColor"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M3 3h8v2h2V3h8v16h-7v2h-4v-2H3V3Zm3 3v10h4V6H6Zm8 0v10h4V6h-4Z" fill="currentColor"/></symbol>
+    <symbol id="i-crew" viewBox="0 0 24 24"><path d="M5 3h5v6H5V3Zm10 0h5v6h-5V3ZM3 12h9v9H3v-9Zm11 0h8v9h-8v-9Z" fill="currentColor"/></symbol>
+    <symbol id="i-log" viewBox="0 0 24 24"><path d="M3 4h18v3H3V4Zm0 6h3v3H3v-3Zm6 0h12v3H9v-3Zm-6 6h3v3H3v-3Zm6 0h12v3H9v-3Z" fill="currentColor"/></symbol>
+    <symbol id="i-cursor" viewBox="0 0 24 24"><path d="M4 2v18h3v-5h3v3h3v3h3v-3h-3v-3h7v-3h-3V9h-3V6h-3V3H7V2H4Z" fill="currentColor"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M10 1h4v7h3v3h6v3h-6v3h-3v6h-4v-6H7v-3H1v-3h6V8h3V1Z" fill="currentColor"/></symbol>
+  </defs></svg>
+  <a class="skip-link" href="#story-tabs">릴리스 정보로 건너뛰기</a>
+  <div class="page-shell">
+    <header class="page-header">
+      <div class="brand-row"><span class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg> MANTECH <span class="divider">/</span> MDRM RELEASE STORY</span><span class="office-open"><i class="status-dot"></i> OFFICE IS OPEN</span></div>
+      <h1><span>MDRM</span> AGENT OFFICE<span class="title-pixel" aria-hidden="true">.</span></h1>
+      <p>더 단단한 내일을 만드는 작은 오피스. <span>오늘도 에이전트들은 열일 중입니다.</span></p>
+    </header>
+
+    <section class="release-bar rpg-window" aria-label="MDRM 릴리스 현황">
+      <div class="release-main"><svg class="icon release-icon" aria-hidden="true"><use href="#i-shield"/></svg><div><span class="micro-label">THE NEXT CHAPTER</span><div class="version-line"><strong id="version-current"></strong><span class="version-arrow" aria-hidden="true">▸</span><strong id="version-next"></strong></div></div><span class="dday-chip" data-dday></span><span class="schedule-chip" id="release-schedule"></span></div>
+      <div class="release-meta"><strong><i class="status-dot"></i> <span id="issue-count"></span></strong><time id="today-kst"></time></div>
+    </section>
+
+    <main>
+      <div class="office-layout">
+        <section class="scene-panel rpg-window" aria-labelledby="office-heading">
+          <div class="scene-toolbar"><h2 id="office-heading"><span class="micro-label">01</span> THE OFFICE</h2><span class="scene-live" id="motion-state"><i class="status-dot"></i> 자율 업무 진행 중</span></div>
+          <div id="scene-stage" class="scene-stage" aria-busy="true">
+            <canvas id="office-canvas" role="img" aria-label="아이소메트릭 MDRM 오피스. 개발실의 네 개발자와 두 직원이 릴리스를 준비하고, 서버실에서 MDRM 용사와 AGENT가 보안 이슈 몬스터를 방어합니다."></canvas>
+            <div id="scene-overlays" aria-hidden="true"></div>
+            <div id="scene-loading" class="scene-loading" role="status"><span class="loading-shield"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span><strong>오피스의 불을 켜는 중</strong><span>동료들이 곧 도착합니다…</span></div>
+            <div class="scene-coordinate" aria-hidden="true">MDRM HQ <span>37.5° N · 127.0° E</span></div>
+          </div>
+          <div class="scene-caption"><span><svg class="icon" aria-hidden="true"><use href="#i-cursor"/></svg> 캐릭터를 눌러 지금의 이야기를 만나보세요</span><span class="caption-tag">AUTO · IDLE</span></div>
+        </section>
+        <aside class="side-panels" aria-label="오피스 실시간 상태">
+          <section class="side-panel rpg-window" aria-labelledby="agents-heading"><div class="panel-heading"><h2 id="agents-heading"><svg class="icon" aria-hidden="true"><use href="#i-crew"/></svg> 에이전트</h2><span class="panel-count" id="crew-count"></span></div><div class="agent-list" id="agent-list"></div></section>
+          <section class="side-panel rpg-window" aria-labelledby="defense-heading"><div class="panel-heading"><h2 id="defense-heading"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg> 서버실 방어</h2><span class="tiny-tag">ALL CLEAR</span></div><div id="defense-list"></div></section>
+          <section class="side-panel log-panel rpg-window" aria-labelledby="log-heading"><div class="panel-heading"><h2 id="log-heading"><svg class="icon" aria-hidden="true"><use href="#i-log"/></svg> 활동 로그</h2><span class="simulation-tag">연출</span></div><ol id="activity-log" aria-label="최근 활동 7개" aria-live="polite" aria-relevant="additions"></ol></section>
+        </aside>
+      </div>
+
+      <section class="story-section" aria-label="MDRM 릴리스 이야기">
+        <div id="story-tabs" class="story-tabs" role="tablist" aria-label="오피스 정보">
+          <button type="button" id="tab-history" role="tab" aria-selected="true" aria-controls="panel-history" tabindex="0"><svg class="icon" aria-hidden="true"><use href="#i-history"/></svg>이력<span class="tab-index">01</span></button>
+          <button type="button" id="tab-bestiary" role="tab" aria-selected="false" aria-controls="panel-bestiary" tabindex="-1"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>도감<span class="tab-index">02</span></button>
+          <button type="button" id="tab-crew" role="tab" aria-selected="false" aria-controls="panel-crew" tabindex="-1"><svg class="icon" aria-hidden="true"><use href="#i-crew"/></svg>개발진<span class="tab-index">03</span></button>
+          <button type="button" id="tab-party" role="tab" aria-selected="false" aria-controls="panel-party" tabindex="-1"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>용사단<span class="tab-index">04</span></button>
+        </div>
+        <div class="story-body rpg-window">
+          <section id="panel-history" role="tabpanel" aria-labelledby="tab-history" tabindex="0"></section>
+          <section id="panel-bestiary" role="tabpanel" aria-labelledby="tab-bestiary" tabindex="0" hidden></section>
+          <section id="panel-crew" role="tabpanel" aria-labelledby="tab-crew" tabindex="0" hidden></section>
+          <section id="panel-party" role="tabpanel" aria-labelledby="tab-party" tabindex="0" hidden></section>
+        </div>
+      </section>
+    </main>
+    <footer class="page-footer"><p id="footer-note"></p><a href="https://kenney.nl/assets" target="_blank" rel="noopener noreferrer">Assets: Kenney (CC0) <span aria-hidden="true">↗</span></a><span class="footer-brand">BUILT FOR A SAFER TOMORROW</span></footer>
+  </div>
+  <noscript>이 오피스를 보려면 JavaScript를 활성화해 주세요.</noscript>
+</body>
+</html>

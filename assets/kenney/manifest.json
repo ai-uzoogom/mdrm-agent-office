@@ -1,0 +1,176 @@
+[
+  {
+    "pack": "mini-characters",
+    "file": "character-male-a.glb",
+    "sha256": "77572792bfe2773b715b8cd8e18644b52b3e1f155fe10450254b50f9c364382a",
+    "bytes": 246916
+  },
+  {
+    "pack": "mini-characters",
+    "file": "character-female-a.glb",
+    "sha256": "8cfcff43460da8b421f2a7fdfb43ec177321cad2746db9497cbf128d5806e2a8",
+    "bytes": 273448
+  },
+  {
+    "pack": "mini-characters",
+    "file": "character-male-c.glb",
+    "sha256": "672a6506f7475bbd655da1d7ff712c1729a430f134c62385a4e5d3c1378acb40",
+    "bytes": 263104
+  },
+  {
+    "pack": "mini-characters",
+    "file": "character-female-d.glb",
+    "sha256": "67f61708743bd34f91a4c2ba8160b61bf2e7d4ec2ca6647dfe99873422561410",
+    "bytes": 258760
+  },
+  {
+    "pack": "mini-characters",
+    "file": "character-male-f.glb",
+    "sha256": "ed151fc47c5cd6be9693c524e92f045170c965819f4f81b28ed66dcc3c1085bf",
+    "bytes": 249388
+  },
+  {
+    "pack": "mini-characters",
+    "file": "character-female-b.glb",
+    "sha256": "2288438e7baf9acc91a870c82dc00d66710bb486592cfc3474ef8ed93a03863a",
+    "bytes": 252140
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "desk.glb",
+    "sha256": "0164fe828f028b321730fb8c74502e353583f751be74da1682d42fff7d3c5a42",
+    "bytes": 15048
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "chairDesk.glb",
+    "sha256": "46406619186034cbe92b19b79a5f1a8e3f442a17a70a7524ef2c0ad0f35095c6",
+    "bytes": 39016
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "computerScreen.glb",
+    "sha256": "5942cbad29a2d2b956619569926e81d50a4174403d592fece6556e57632dc643",
+    "bytes": 6404
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "computerKeyboard.glb",
+    "sha256": "9d9135789de2120e9f41ce3f0a56dd1b15f40adcc7888739bb842a2d820da322",
+    "bytes": 3476
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "computerMouse.glb",
+    "sha256": "d3ad1a923f0f7707ef367bb969eb94c9076e211c98c830ba52e133fadc5cdfc0",
+    "bytes": 5868
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "bookcaseOpen.glb",
+    "sha256": "750702218d68c062b15dfef6ab06a4014d1cfa8bd05f02e57c53b7e13bec157c",
+    "bytes": 18020
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "books.glb",
+    "sha256": "b8dc56e5d29f6fc1f4727fccb1b9642627fee9942c48060a00034e98df02701c",
+    "bytes": 6864
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "kitchenCoffeeMachine.glb",
+    "sha256": "063f582c6fa0f00a9f24e3393dac2295491c4becdaf5513c893ab1a2826b6ec3",
+    "bytes": 13332
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "kitchenCabinet.glb",
+    "sha256": "7238c57778935ae25db5e57e9f7af3ba7068c71b005ff7cfbff3b6f3b1a13200",
+    "bytes": 10444
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "plantSmall1.glb",
+    "sha256": "2b9c022feb47be857b2c4fdc29f36522766ba9b70c578c31d7c05d71b4377d15",
+    "bytes": 8224
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "pottedPlant.glb",
+    "sha256": "5b760eda2766f75fda36b2c5df652a1662f82981ef64cd8fa7fe7bcd386b3a15",
+    "bytes": 7576
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "table.glb",
+    "sha256": "ff1a94498d023957f4bc3ff6f55a7a82977d336dbf01a573b3364f03afe5ff61",
+    "bytes": 8196
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "chairCushion.glb",
+    "sha256": "33544228984857f2cb502b58452fed72157335f9b1caf29e96da5c9094c53fdc",
+    "bytes": 12588
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "laptop.glb",
+    "sha256": "5fa8a1f4a71ab8d82ef64da77a6973ffd350c6d4557516069a4ffd4bb8d808af",
+    "bytes": 5540
+  },
+  {
+    "pack": "furniture-kit",
+    "file": "rugRectangle.glb",
+    "sha256": "a989d2d59c04e3071e0c90388b113a9a8f339ce1814ef984c51cb6dcd7c8e0eb",
+    "bytes": 3188
+  },
+  {
+    "pack": "mini-dungeon",
+    "file": "character-human.glb",
+    "sha256": "6a149b22f52f5ea6b2983dd38cb164b112be66bad5a51d640d089aafd2647a7b",
+    "bytes": 218072
+  },
+  {
+    "pack": "mini-dungeon",
+    "file": "character-orc.glb",
+    "sha256": "e0b021c98b34a633567ca79f7c129cca48fd7919aa9e959464deba226767c284",
+    "bytes": 199616
+  },
+  {
+    "pack": "mini-dungeon",
+    "file": "weapon-sword.glb",
+    "sha256": "8e69eb27977f8c84a9b7cd423cd5830eddcf0d07ac1d7fed1969931387015b28",
+    "bytes": 9284
+  },
+  {
+    "pack": "mini-dungeon",
+    "file": "shield-rectangle.glb",
+    "sha256": "16e3d0131666e7ad9bdad313253ff5dcc70cddfb86c28864b3b965ee5c65ac3b",
+    "bytes": 13196
+  },
+  {
+    "pack": "mini-dungeon",
+    "file": "barrel.glb",
+    "sha256": "ca735e8eb8f9170b3d9413ee9e30a51cb275e9597b87e0b70dd5c02f404cea4d",
+    "bytes": 14096
+  },
+  {
+    "pack": "mini-dungeon",
+    "file": "rocks.glb",
+    "sha256": "ee14136f047ef55fd0a2fc2a71739fd8ff1a8487a6c30cb249de5845a01d01ca",
+    "bytes": 18452
+  },
+  {
+    "pack": "mini-characters",
+    "file": "Textures/colormap.png",
+    "sha256": "0d4947d34ff32acf4a359c7f22ca784e057e7e72f622170a9a77b6fc88fdb70e",
+    "bytes": 8706
+  },
+  {
+    "pack": "mini-dungeon",
+    "file": "Textures/colormap.png",
+    "sha256": "bc492d755caf9e64924447f065681be0d5438a33cd0acddc72f3d00fd75893be",
+    "bytes": 10838
+  }
+]
