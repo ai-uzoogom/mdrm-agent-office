@@ -2,6 +2,12 @@
 
 MDRM 릴리스 준비를 작은 아이소메트릭 오피스와 자동 전투로 표현하는 정적 웹페이지입니다. 개발자 4명, 이동 직원 2명, 회의 담당자, MDRM 용사, AGENT와 이슈 몬스터가 자동으로 움직입니다. 캐릭터 클릭은 상태 확인이며 전투를 조작하지 않습니다.
 
+## 온라인에서 보기
+
+[GitHub Pages에서 MDRM AGENT OFFICE 열기](https://ai-uzoogom.github.io/mdrm-agent-office/) · [소스 저장소](https://github.com/ai-uzoogom/mdrm-agent-office)
+
+설치 없이 데스크톱·모바일 브라우저에서 바로 볼 수 있습니다.
+
 ## 실행
 
 Python 3만 있으면 빌드나 패키지 설치 없이 실행할 수 있습니다.
@@ -106,4 +112,4 @@ npm run prepare:pages
 
 생성된 `_site/`에는 `index.html`, `styles.css`, `src/`, `assets/`, `vendor/`와 `.nojekyll`만 포함됩니다. 문서·테스트·개발 의존성은 웹사이트 배포 파일에 포함하지 않습니다. 모든 런타임 경로가 상대 경로이므로 `https://<owner>.github.io/mdrm-agent-office/` 형태의 프로젝트 사이트에서도 동작합니다.
 
-워크플로는 GitHub의 공식 Pages 액션을 커밋 SHA로 고정하며, 별도 배포 비밀번호나 개인 토큰 없이 저장소의 `GITHUB_TOKEN`과 OIDC를 사용합니다. 원본 소스 저장소와 사이트의 공개 범위는 실제 배포 전에 결정합니다.
+워크플로는 GitHub의 공식 Pages 액션을 커밋 SHA로 고정하며, 별도 배포 비밀번호나 개인 토큰 없이 저장소의 `GITHUB_TOKEN`과 OIDC를 사용합니다. 이 프로젝트의 소스 저장소와 GitHub Pages 사이트는 공개 상태입니다. `main`에 변경을 push하면 자동으로 사이트가 갱신됩니다.

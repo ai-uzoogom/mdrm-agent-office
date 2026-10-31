@@ -283,5 +283,368 @@
       "size_mib": 8.02,
       "published": false
     }
+  },
+  "github_pages_live": {
+    "date": "2026-10-31T04:34:34.036Z",
+    "url": "https://ai-uzoogom.github.io/mdrm-agent-office/",
+    "browser": "156.0.8078.74",
+    "checks": [
+      {
+        "name": "1280px initial render, local assets, thumbnails and KST"
+      },
+      {
+        "name": "10-second autonomous activity and stable scene layout",
+        "fps": 60,
+        "minimumOneSecondFPS": 60,
+        "metrics": {
+          "walk": 894,
+          "typing": 670,
+          "led": 25,
+          "melee": 2,
+          "breath": 1,
+          "combat": 3
+        }
+      },
+      {
+        "name": "live reduced-motion change freezes animation and simulation"
+      },
+      {
+        "name": "raycast hero, pet, rack, developer and monster status"
+      },
+      {
+        "name": "all tabs, ArrowLeft/Right, Home/End and visible panels"
+      },
+      {
+        "name": "901px, 900px and 390px responsive layout; mobile labels hidden; all mobile tabs fit"
+      },
+      {
+        "name": "initial reduced-motion preference: static frame, fixed bubbles, no combat"
+      },
+      {
+        "name": "ISSUES addition updates scene, sidebar, both timelines, bestiary and count"
+      },
+      {
+        "name": "grade change propagates to monster form and all information panels"
+      },
+      {
+        "name": "released state removes monsters and grays completed issues"
+      },
+      {
+        "name": "zero console errors, page errors and HTTP errors in all scenarios"
+      }
+    ],
+    "errors": [],
+    "commit": "981b3801ea24578d8a45928914c7ecb147be5a1b",
+    "workflow_run": "https://github.com/ai-uzoogom/mdrm-agent-office/actions/runs/41169045833",
+    "artifact_verification": {
+      "url": "https://ai-uzoogom.github.io/mdrm-agent-office/",
+      "files": 50,
+      "excluded": [
+        ".nojekyll (hosting configuration marker)"
+      ],
+      "all_match": true,
+      "results": [
+        {
+          "path": "assets/favicon.svg",
+          "status": 200,
+          "match": true,
+          "sha256": "af9f7b04039ea83f571d6a980ae5acd53829a5c7643d80d2b37b83a22578e2d1"
+        },
+        {
+          "path": "assets/fonts/NanumGothicCoding-Bold.ttf",
+          "status": 200,
+          "match": true,
+          "sha256": "77a6de97c176b76ef9a683b565a1e6f4ce40b499c72a2972c4b5bdf7c6b8e7a0"
+        },
+        {
+          "path": "assets/fonts/NanumGothicCoding-OFL.txt",
+          "status": 200,
+          "match": true,
+          "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f"
+        },
+        {
+          "path": "assets/fonts/NanumGothicCoding-Regular.ttf",
+          "status": 200,
+          "match": true,
+          "sha256": "787effd7efed2abca88ade231faa8191f4e9fcf85b1805a13ee1dc3724b72089"
+        },
+        {
+          "path": "assets/fonts/PressStart2P-OFL.txt",
+          "status": 200,
+          "match": true,
+          "sha256": "705960c3281a5765ecc0b59bd4ed7ca59eed165748076bc2fc3e8fdbfeb944b0"
+        },
+        {
+          "path": "assets/fonts/PressStart2P-Regular.ttf",
+          "status": 200,
+          "match": true,
+          "sha256": "034c77f1f05ec89421e4a63f0e3a4ca1ecf852cc6d2bf611f126f275728e017d"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/License.txt",
+          "status": 200,
+          "match": true,
+          "sha256": "bc0de1a0742cb490f9ed4bae0bd284286ebb27e23149b9917c7d8c0d590b8b29"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/bookcaseOpen.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "750702218d68c062b15dfef6ab06a4014d1cfa8bd05f02e57c53b7e13bec157c"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/books.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "b8dc56e5d29f6fc1f4727fccb1b9642627fee9942c48060a00034e98df02701c"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/chairCushion.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "33544228984857f2cb502b58452fed72157335f9b1caf29e96da5c9094c53fdc"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/chairDesk.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "46406619186034cbe92b19b79a5f1a8e3f442a17a70a7524ef2c0ad0f35095c6"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/computerKeyboard.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "9d9135789de2120e9f41ce3f0a56dd1b15f40adcc7888739bb842a2d820da322"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/computerMouse.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "d3ad1a923f0f7707ef367bb969eb94c9076e211c98c830ba52e133fadc5cdfc0"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/computerScreen.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "5942cbad29a2d2b956619569926e81d50a4174403d592fece6556e57632dc643"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/desk.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "0164fe828f028b321730fb8c74502e353583f751be74da1682d42fff7d3c5a42"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/kitchenCabinet.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "7238c57778935ae25db5e57e9f7af3ba7068c71b005ff7cfbff3b6f3b1a13200"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/kitchenCoffeeMachine.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "063f582c6fa0f00a9f24e3393dac2295491c4becdaf5513c893ab1a2826b6ec3"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/laptop.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "5fa8a1f4a71ab8d82ef64da77a6973ffd350c6d4557516069a4ffd4bb8d808af"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/plantSmall1.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "2b9c022feb47be857b2c4fdc29f36522766ba9b70c578c31d7c05d71b4377d15"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/pottedPlant.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "5b760eda2766f75fda36b2c5df652a1662f82981ef64cd8fa7fe7bcd386b3a15"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/rugRectangle.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "a989d2d59c04e3071e0c90388b113a9a8f339ce1814ef984c51cb6dcd7c8e0eb"
+        },
+        {
+          "path": "assets/kenney/furniture-kit/table.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "ff1a94498d023957f4bc3ff6f55a7a82977d336dbf01a573b3364f03afe5ff61"
+        },
+        {
+          "path": "assets/kenney/manifest.json",
+          "status": 200,
+          "match": true,
+          "sha256": "7bb4ecce01f322dcb8622ec0196fdbddd9db5b960a3749f62e5eac7cd6d8bf0b"
+        },
+        {
+          "path": "assets/kenney/mini-characters/License.txt",
+          "status": 200,
+          "match": true,
+          "sha256": "28358ae5accc85b572eb42507956afc8beae05acb4648bb9026a5714d421b785"
+        },
+        {
+          "path": "assets/kenney/mini-characters/Textures/colormap.png",
+          "status": 200,
+          "match": true,
+          "sha256": "0d4947d34ff32acf4a359c7f22ca784e057e7e72f622170a9a77b6fc88fdb70e"
+        },
+        {
+          "path": "assets/kenney/mini-characters/character-female-a.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "8cfcff43460da8b421f2a7fdfb43ec177321cad2746db9497cbf128d5806e2a8"
+        },
+        {
+          "path": "assets/kenney/mini-characters/character-female-b.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "2288438e7baf9acc91a870c82dc00d66710bb486592cfc3474ef8ed93a03863a"
+        },
+        {
+          "path": "assets/kenney/mini-characters/character-female-d.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "67f61708743bd34f91a4c2ba8160b61bf2e7d4ec2ca6647dfe99873422561410"
+        },
+        {
+          "path": "assets/kenney/mini-characters/character-male-a.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "77572792bfe2773b715b8cd8e18644b52b3e1f155fe10450254b50f9c364382a"
+        },
+        {
+          "path": "assets/kenney/mini-characters/character-male-c.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "672a6506f7475bbd655da1d7ff712c1729a430f134c62385a4e5d3c1378acb40"
+        },
+        {
+          "path": "assets/kenney/mini-characters/character-male-f.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "ed151fc47c5cd6be9693c524e92f045170c965819f4f81b28ed66dcc3c1085bf"
+        },
+        {
+          "path": "assets/kenney/mini-dungeon/License.txt",
+          "status": 200,
+          "match": true,
+          "sha256": "f8b470068a1c043854101c9ff7161d376ba02c36239da3c1dbdfa928b08444b6"
+        },
+        {
+          "path": "assets/kenney/mini-dungeon/Textures/colormap.png",
+          "status": 200,
+          "match": true,
+          "sha256": "bc492d755caf9e64924447f065681be0d5438a33cd0acddc72f3d00fd75893be"
+        },
+        {
+          "path": "assets/kenney/mini-dungeon/barrel.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "ca735e8eb8f9170b3d9413ee9e30a51cb275e9597b87e0b70dd5c02f404cea4d"
+        },
+        {
+          "path": "assets/kenney/mini-dungeon/character-human.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "6a149b22f52f5ea6b2983dd38cb164b112be66bad5a51d640d089aafd2647a7b"
+        },
+        {
+          "path": "assets/kenney/mini-dungeon/character-orc.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "e0b021c98b34a633567ca79f7c129cca48fd7919aa9e959464deba226767c284"
+        },
+        {
+          "path": "assets/kenney/mini-dungeon/rocks.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "ee14136f047ef55fd0a2fc2a71739fd8ff1a8487a6c30cb249de5845a01d01ca"
+        },
+        {
+          "path": "assets/kenney/mini-dungeon/shield-rectangle.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "16e3d0131666e7ad9bdad313253ff5dcc70cddfb86c28864b3b965ee5c65ac3b"
+        },
+        {
+          "path": "assets/kenney/mini-dungeon/weapon-sword.glb",
+          "status": 200,
+          "match": true,
+          "sha256": "8e69eb27977f8c84a9b7cd423cd5830eddcf0d07ac1d7fed1969931387015b28"
+        },
+        {
+          "path": "index.html",
+          "status": 200,
+          "match": true,
+          "sha256": "c754b3aec5fa8ede86b204126dc4b241879baf594870689b891b4ea311b42ad5"
+        },
+        {
+          "path": "src/data.js",
+          "status": 200,
+          "match": true,
+          "sha256": "c96e521ed19e7a948fbd3c21eba4d72e44dee636e030a974caa7831d9cbad1d5"
+        },
+        {
+          "path": "src/main.js",
+          "status": 200,
+          "match": true,
+          "sha256": "bc8ee83ca87faeac9a28663483c3f4a07629e332bc63659c1cc2ab1f77b77c90"
+        },
+        {
+          "path": "src/models.js",
+          "status": 200,
+          "match": true,
+          "sha256": "97c599416673cae1fad99307dfb099c384babe03acd95f0410b9bb8308eca835"
+        },
+        {
+          "path": "src/scene.js",
+          "status": 200,
+          "match": true,
+          "sha256": "d17406392f376caec23d818fc62d93f6f0a55f71aadbfa0a8e3c1d3047feafb1"
+        },
+        {
+          "path": "styles.css",
+          "status": 200,
+          "match": true,
+          "sha256": "fd5613028c9383c5cfbde9ae0f84b00a56a44cf746f7f8083d5833edc8ac02cd"
+        },
+        {
+          "path": "vendor/three/LICENSE",
+          "status": 200,
+          "match": true,
+          "sha256": "852e0e8699169bf9f6fdc6bda3e682d078dcbc738b5d33e74df594721bff271d"
+        },
+        {
+          "path": "vendor/three/addons/loaders/GLTFLoader.js",
+          "status": 200,
+          "match": true,
+          "sha256": "d073b438e6a07e1359741dd5d6c76c953420cc0d4fd84eb1bdde94315540e6a3"
+        },
+        {
+          "path": "vendor/three/addons/utils/BufferGeometryUtils.js",
+          "status": 200,
+          "match": true,
+          "sha256": "9be041e96308775d00e2695cc607645b9a9b64fd7c0e759dd8f7c00a8d92becb"
+        },
+        {
+          "path": "vendor/three/addons/utils/SkeletonUtils.js",
+          "status": 200,
+          "match": true,
+          "sha256": "83748c5072a5ce96e9d68d8efda908a1f1a06c0b5fd2618edc3e54a361a8fd5b"
+        },
+        {
+          "path": "vendor/three/three.module.js",
+          "status": 200,
+          "match": true,
+          "sha256": "76dea8151bc9352aef3528b4262e249b2604f62543828328db978d060d61a495"
+        }
+      ]
+    }
   }
 }
