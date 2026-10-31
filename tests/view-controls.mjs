@@ -85,7 +85,7 @@ try{
 
  await page.locator('#zoom-reset').click();for(let i=0;i<4;i++)await page.locator('#zoom-in').click();
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(120);await checkLayout(page);
- assert.equal((await snapshot(page)).view.zoom,2);assert.equal(await page.locator('.wall-label').first().evaluate(node=>getComputedStyle(node).display),'none');
+ assert.equal((await snapshot(page)).view.zoom,2);assert.notEqual(await page.locator('.wall-label').first().evaluate(node=>getComputedStyle(node).display),'none');
  await capture(page,'view-mobile-200');
  await page.locator('#zoom-reset').click();await capture(page,'view-mobile-100');
  const frozen=await snapshot(page);await page.waitForTimeout(300);const later=await snapshot(page);

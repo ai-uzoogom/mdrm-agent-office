@@ -55,6 +55,12 @@ const kneeSpace=office.crewActors.slice(0,4).map(a=>{
   const ray=new THREE.Raycaster(new THREE.Vector3(a.root.position.x+offset,1,desk.max.z+.1),new THREE.Vector3(0,0,-1)),hit=ray.intersectObject(a.desk,true)[0];return hit?desk.max.z-hit.point.z:Infinity;
  });
 });
-office.nextCode=0;render(.25);window.__WORKSTATION_REVIEW__={samples,kneeSpace,displays:displayReports};document.documentElement.dataset.reviewReady='true';
+const chairFacing=office.meetingChairs.map(chair=>{
+ chair.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(chair),points=[],point=new THREE.Vector3();
+ chair.traverse(mesh=>{if(!mesh.isMesh)return;const position=mesh.geometry.attributes.position;for(const i of new Set(mesh.geometry.index.array)){point.fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld);if(point.y>b.min.y+(b.max.y-b.min.y)*.8)points.push(point.clone());}});
+ const back=points.reduce((sum,p)=>sum.add(p),new THREE.Vector3()).divideScalar(points.length),towardTable=new THREE.Vector3(18,0,-8.5).sub(chair.position).setY(0).normalize();
+ return {position:chair.position.toArray(),back:back.toArray(),backDotTable:back.sub(chair.position).setY(0).dot(towardTable)};
+});
+office.nextCode=0;render(.25);window.__WORKSTATION_REVIEW__={samples,kneeSpace,chairFacing,displays:displayReports};document.documentElement.dataset.reviewReady='true';
 let time=.25,playing=false,last=0;function animate(now){if(!playing)return;time+=Math.min(.06,(now-last)/1000||0);last=now;render(time);requestAnimationFrame(animate);}document.querySelector('#step').onclick=()=>{time+=.14;render(time);};document.querySelector('#play').onclick=()=>{playing=!playing;last=0;document.querySelector('#play').textContent=playing?'동작 정지':'동작 재생';if(playing)requestAnimationFrame(animate);};
 </script></html>

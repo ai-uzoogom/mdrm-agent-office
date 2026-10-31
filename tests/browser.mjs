@@ -124,9 +124,9 @@ try{
  await page.getByRole('tab',{name:'이력'}).click();
  for(const width of [901,900,390]){
   await page.setViewportSize({width,height:844});await page.waitForTimeout(120);await noOverflow(page);await checkSurfaceLabels(page);
-  if(width===390){assert.equal(await page.locator('.name-label').first().evaluate(e=>getComputedStyle(e).display),'none');assert.equal(await page.locator('.monster-label').first().evaluate(e=>getComputedStyle(e).display),'none');assert.equal(await page.locator('.wall-label').first().evaluate(e=>getComputedStyle(e).display),'none');}
+  if(width===390){assert.equal(await page.locator('.name-label').first().evaluate(e=>getComputedStyle(e).display)!=='none',true);assert.equal(await page.locator('.monster-label').first().evaluate(e=>getComputedStyle(e).display)!=='none',true);assert.equal(await page.locator('.wall-label').first().evaluate(e=>getComputedStyle(e).display)!=='none',true);}
  }
- await screenshot(page,'mobile');for(const id of ['bestiary','crew','party']){await page.locator(`#tab-${id}`).click();await noOverflow(page);}record('901px, 900px and 390px responsive layout; mobile labels hidden; all mobile tabs fit');
+ await screenshot(page,'mobile');for(const id of ['bestiary','crew','party']){await page.locator(`#tab-${id}`).click();await noOverflow(page);}record('901px, 900px and 390px responsive layout; mobile room and role labels visible; all mobile tabs fit');
  record('wall and whiteboard text follow surface angles across resize; board heading avoids bubbles');
  await context.close();
  const reduced=await openPage({width:390,height:844,reduced:'reduce'});

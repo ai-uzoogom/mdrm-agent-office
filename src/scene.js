@@ -71,8 +71,9 @@ export class OfficeScene {
     this.meetingLaptop=this.addProp('laptop',{h:1.55,w:2.6,d:2.2},18,2.55,-6.4);
     this.meetingDisplay=attachDisplay(this.meetingLaptop,'laptop',{color:'#c79bff'});this.meetingDisplay.update(0,'일정 점검');this.displays.push(this.meetingDisplay);
     box(room,2,.07,1.4,'#e5e4d8',14.6,2.65,-8.1);box(room,1.5,.07,1,'#c79bff',21,2.65,-9.5);
+    this.meetingChairs=[];
     for(const [x,z,rot] of [[11.1,-8.5,-Math.PI/2],[24.8,-8.5,Math.PI/2],[18,-3.7,0],[18,-13,Math.PI]]){
-      const chair=this.addProp('chairCushion',{h:rot===0?4:3.7,w:2.6,d:2.8},x,0,z,rot);if(rot===0)this.meetingChair=chair;
+      const chair=this.addProp('chairCushion',{h:rot===0?4:3.7,w:2.6,d:2.8},x,0,z,rot+Math.PI);this.meetingChairs.push(chair);if(rot===0)this.meetingChair=chair;
     }
     const board=group(room,18.2,7.1,-21);
     box(board,15.8,6.3,.4,'#34334f',0,0,-.3);box(board,15.1,5.6,.22,'#f4efe0');
@@ -381,7 +382,10 @@ export class OfficeScene {
       const w=this.navigation.offsetWidth,h=this.navigation.offsetHeight;
       occupied.push({x:this.navigation.offsetLeft+w/2,y:this.navigation.offsetTop+h,w,h});
     }
-    for(const entry of this.labels){const p=this.project(entry.target,entry.height);entry.el.style.transform=`translate(${Math.round(p.x)}px,${Math.round(p.y)}px) translate(-50%,-100%)`;}
+    for(const entry of this.labels){
+      const p=this.project(entry.target,entry.height);entry.el.style.transform=`translate(${Math.round(p.x)}px,${Math.round(p.y)}px) translate(-50%,-100%)`;
+      const w=entry.el.offsetWidth,h=entry.el.offsetHeight;if(w&&p.x>=0&&p.x<=this.width&&p.y>=0&&p.y<=this.height)occupied.push({x:p.x,y:p.y,w,h});
+    }
     for(const entry of this.surfaceLabels){
       const [tl,tr,bl]=entry.corners.map(p=>this.project(entry.point.copy(p).applyMatrix4(entry.anchor.matrixWorld)));
       // Orthographic projection is affine: map the entire HTML rectangle to the surface.
