@@ -12,7 +12,7 @@ export class OfficeScene {
     this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0,encourage:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.surfaceLabels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.displays=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
     this.motionQuery=matchMedia('(prefers-reduced-motion: reduce)');this.reduced=this.motionQuery.matches;this.pointer=new THREE.Vector2();this.raycaster=new THREE.Raycaster();this.projectVector=new THREE.Vector3();this.raf=null;this.ready=false;this.battleCursor=2;
     this.nextCrew=1.6;this.nextLed=.4;this.nextCode=.13;this.nextBattle=1.8;this.nextMeeting=5;this.lastCalendar=0;
-    this.zoom=VIEW.min;this.viewPan=new THREE.Vector2();this.viewFit=null;this.drag=null;this.suppressClick=false;this.navigation=stage.querySelector('.scene-navigation');
+    this.zoom=VIEW.min;this.viewPan=new THREE.Vector2();this.viewFit=null;this.drag=null;this.touchGesture=null;this.suppressClick=false;this.navigation=stage.querySelector('.scene-navigation');
   }
   async init(){
     this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:false,alpha:true,powerPreference:'high-performance'});
@@ -204,11 +204,12 @@ export class OfficeScene {
   inspect(key){this.clickHandlers.get(key)?.();}
   installEvents(){
     this.canvas.addEventListener('pointerdown',event=>{
-      if(event.button!==0||this.drag)return;this.suppressClick=false;
+      if(event.button!==0||this.drag||this.touchGesture)return;this.suppressClick=false;
       if(this.zoom<=VIEW.min)return;
       this.drag={id:event.pointerId,x:event.clientX,y:event.clientY,startX:event.clientX,startY:event.clientY,moved:false};this.canvas.setPointerCapture(event.pointerId);
     });
     this.canvas.addEventListener('pointermove',event=>{
+      if(this.touchGesture)return;
       const drag=this.drag;
       if(drag&&drag.id===event.pointerId){
         if(!drag.moved&&Math.hypot(event.clientX-drag.startX,event.clientY-drag.startY)<5)return;
@@ -222,6 +223,35 @@ export class OfficeScene {
       if(this.canvas.hasPointerCapture(event.pointerId))this.canvas.releasePointerCapture(event.pointerId);
     };
     for(const type of ['pointerup','pointercancel','lostpointercapture'])this.canvas.addEventListener(type,endDrag);
+    const touchPair=touches=>{
+      const [a,b]=touches;return {x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2,distance:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)};
+    };
+    const beginPinch=event=>{
+      if(event.cancelable)event.preventDefault();this.suppressClick=true;
+      const drag=this.drag;this.drag=null;this.canvas.classList.remove('is-dragging','is-pointing');
+      if(drag&&this.canvas.hasPointerCapture(drag.id))this.canvas.releasePointerCapture(drag.id);
+      this.touchGesture=touchPair(event.touches);
+    };
+    this.canvas.addEventListener('touchstart',event=>{if(event.touches.length>=2)beginPinch(event);},{passive:false});
+    this.canvas.addEventListener('touchmove',event=>{
+      if(event.touches.length>=2){
+        if(!this.touchGesture||this.touchGesture.pan){beginPinch(event);return;}
+        if(event.cancelable)event.preventDefault();const next=touchPair(event.touches),previous=this.touchGesture,rect=this.canvas.getBoundingClientRect();
+        if(previous.distance>1&&next.distance>1)this.setZoom(this.zoom*next.distance/previous.distance,{x:(previous.x-rect.left)/rect.width,y:(previous.y-rect.top)/rect.height});
+        this.panByPixels(next.x-previous.x,next.y-previous.y);this.touchGesture=next;this.suppressClick=true;
+      }else if(this.touchGesture?.pan&&event.touches.length===1){
+        if(event.cancelable)event.preventDefault();const touch=event.touches[0];this.panByPixels(touch.clientX-this.touchGesture.x,touch.clientY-this.touchGesture.y);
+        this.touchGesture={pan:true,x:touch.clientX,y:touch.clientY};
+      }
+    },{passive:false});
+    this.canvas.addEventListener('touchend',event=>{
+      if(!this.touchGesture)return;this.suppressClick=true;
+      if(event.touches.length>=2)this.touchGesture=touchPair(event.touches);
+      else if(event.touches.length===1){const touch=event.touches[0];this.touchGesture={pan:true,x:touch.clientX,y:touch.clientY};}
+      else this.touchGesture=null;
+      this.applyView();
+    });
+    this.canvas.addEventListener('touchcancel',()=>{if(this.touchGesture)this.suppressClick=true;this.touchGesture=null;this.applyView();});
     this.canvas.addEventListener('pointerleave',()=>this.canvas.classList.remove('is-pointing'));
     this.canvas.addEventListener('click',event=>{if(this.suppressClick){this.suppressClick=false;return;}const actor=this.hit(event);if(actor)this.describe(actor);});
     this.canvas.addEventListener('wheel',event=>{
@@ -264,6 +294,8 @@ export class OfficeScene {
     this.applyView();
   }
   updateRenderResolution(){
+    // Keep the buffer stable during a pinch; sharpen it on release.
+    if(this.touchGesture&&!this.touchGesture.pan&&this.resolutionKey?.startsWith(`${this.width}:${this.height}:`))return;
     const pinch=Math.max(1,window.visualViewport?.scale??1);
     const requested=(window.devicePixelRatio||1)*RENDERING.detailScale*Math.sqrt(this.zoom)*pinch;
     const ratio=Math.min(requested,RENDERING.maxPixelRatio,RENDERING.maxSceneWidth/this.width,Math.sqrt(RENDERING.maxScenePixels/(this.width*this.height)));

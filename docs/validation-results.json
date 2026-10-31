@@ -4416,5 +4416,87 @@
       "pixelRatio": 6,
       "thumbnail": 768
     }
+  },
+  "two_finger_scene_zoom": {
+    "view": {
+      "date": "2026-10-31T11:41:33.363Z",
+      "url": "http://127.0.0.1:4173/",
+      "browser": "156.0.8078.74",
+      "checks": [
+        "100–200% buttons scale the scene and wall/board text together",
+        "zoomed raycast works; drag moves the view without an accidental click",
+        "keyboard and direction buttons work; 100–300% and pan limits are enforced; reset restores the whole office",
+        "ordinary wheel scrolls the page; Ctrl+wheel zooms around the pointed character",
+        "zoom survives viewport changes; 390px controls fit; reduced motion stays paused after navigation",
+        "two real touch points spread/pan/shrink at their midpoint; 100–300% limits, cancel and no accidental actor click",
+        "one-finger page scrolling remains available at 100%",
+        "mobile browser pinch increases canvas resolution and restores it afterward",
+        "Chrome touch emulation: tap, drag, reset; 375px portrait and 844px landscape controls fit"
+      ],
+      "errors": []
+    },
+    "browser": {
+      "date": "2026-10-31T11:42:28.437Z",
+      "url": "http://127.0.0.1:4173/_site/",
+      "browser": "156.0.8078.74",
+      "checks": [
+        {
+          "name": "1280px initial render, local assets, thumbnails and KST"
+        },
+        {
+          "name": "Kenney ghost floats through approach and knockback without slime squash",
+          "samples": 100,
+          "minimumHeight": 0.2701349857439339
+        },
+        {
+          "name": "10-second autonomous activity and stable scene layout",
+          "fps": 60,
+          "minimumOneSecondFPS": 60,
+          "metrics": {
+            "walk": 1315,
+            "typing": 2532,
+            "led": 25,
+            "melee": 2,
+            "breath": 1,
+            "combat": 3,
+            "encourage": 1
+          }
+        },
+        {
+          "name": "live reduced-motion change freezes animation and simulation"
+        },
+        {
+          "name": "raycast hero, pet, rack, developer and monster status"
+        },
+        {
+          "name": "female coordinator loads, encourages autonomously and exposes status through the sidebar"
+        },
+        {
+          "name": "all tabs, ArrowLeft/Right, Home/End and visible panels"
+        },
+        {
+          "name": "901px, 900px and 390px responsive layout; mobile room and role labels visible; all mobile tabs fit"
+        },
+        {
+          "name": "wall and whiteboard text follow surface angles across resize; board heading avoids bubbles"
+        },
+        {
+          "name": "initial reduced-motion preference: static frame, fixed bubbles, no combat"
+        },
+        {
+          "name": "ISSUES addition updates scene, sidebar, both timelines, bestiary and count"
+        },
+        {
+          "name": "grade change propagates to monster form and all information panels"
+        },
+        {
+          "name": "released state removes monsters and grays completed issues"
+        },
+        {
+          "name": "zero console errors, page errors and HTTP errors in all scenarios"
+        }
+      ],
+      "errors": []
+    }
   }
 }
