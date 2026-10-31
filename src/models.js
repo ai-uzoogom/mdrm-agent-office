@@ -193,7 +193,9 @@ export function hero() {
   box(shieldPivot,.14,.20,.018,'#4168bd',0,.035,.124);
   box(shieldPivot,.024,.12,.012,'#f5c542',0,.035,.139);box(shieldPivot,.09,.024,.012,'#f5c542',0,.055,.140);
   const rest={right:bones['arm-right'].quaternion.clone(),left:bones['arm-left'].quaternion.clone()};
-  const guardAim=group(head,0,.085,.19),guardDirection=shieldPivot.position.clone().applyQuaternion(rest.left).normalize();
+  // Keep the shield on the left side. The left hand reaches forward from the
+  // shoulder; it never crosses to the visor's centerline.
+  const guardAim=group(bones.torso,.30,-.025,.30),guardDirection=shieldPivot.position.clone().applyQuaternion(rest.left).normalize();
   const guardTarget=new THREE.Vector3(),guardRotation=new THREE.Quaternion();
   actor.shieldImpact=group(shieldPivot,0,.035,.15);actor.visor=group(head,0,.19,.252);
   actor.setEquipmentPose=(swing=0,guard=0)=>{
@@ -201,11 +203,14 @@ export function hero() {
     const arm=bones['arm-left'];arm.quaternion.copy(rest.left);
     if(guard>0){
       actor.root.updateMatrixWorld(true);guardAim.getWorldPosition(guardTarget);arm.parent.worldToLocal(guardTarget).sub(arm.position).normalize();
-      guardRotation.setFromUnitVectors(guardDirection,guardTarget).multiply(rest.left);arm.quaternion.slerp(guardRotation,guard);
+      // Reach under the helmet rim before settling into the forward guard.
+      guardTarget.multiplyScalar(guard).addScaledVector(guardDirection,1-guard);guardTarget.y-=.32*Math.sin(Math.PI*guard);guardTarget.normalize();
+      guardRotation.setFromUnitVectors(guardDirection,guardTarget).multiply(rest.left);arm.quaternion.copy(guardRotation);
     }
     // Aim the blade into the invasion lane while retaining the grip on the hand.
     faceInModelSpace(actor,swordPivot,1.65*swing,0,.18);
-    faceInModelSpace(actor,shieldPivot);
+    // Tip the upper rim away early, including while the idle torso/head sway.
+    faceInModelSpace(actor,shieldPivot,.52*Math.min(1,guard*2.5));
   };
   actor.sword=swordPivot;actor.shield=shieldPivot;return actor;
 }

@@ -8,8 +8,10 @@ const errors=[];
 try{
  const page=await browser.newPage({viewport:{width:1440,height:650},deviceScaleFactor:2});
  page.on('pageerror',error=>errors.push(String(error)));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
- await page.goto(new URL('tests/character-review.html',base).href);await page.waitForFunction(()=>document.documentElement.dataset.reviewReady==='true');
+ const fixture=new URL('tests/character-review.html',base);if(process.env.GUARD_TIME)fixture.searchParams.set('time',process.env.GUARD_TIME);
+ await page.goto(fixture.href);await page.waitForFunction(()=>document.documentElement.dataset.reviewReady==='true');
  const data=await page.evaluate(()=>window.__CHARACTER_REVIEW__);
+ await mkdir('test-results',{recursive:true});await writeFile('test-results/guard-motion.json',JSON.stringify(data.guardSamples,null,2));await page.locator('article').nth(2).screenshot({path:'test-results/guard-diagnostic.png'});
  assert.equal(data.headVisible,false,'original hair is still rendered through the helmet');
  assert.equal(data.swordParent,'arm-right');assert.equal(data.shieldParent,'arm-left');
  assert.ok(data.reports.slice(0,3).every(pose=>pose.gearFloorMin>=0),'weapon or shield intersects the floor');
@@ -21,13 +23,15 @@ try{
  assert.ok(Math.hypot(...data.reports[1].sword.map((v,i)=>v-data.reports[0].sword[i]))>.5,'attack did not move the sword hand');
  assert.ok(Math.hypot(...data.reports[2].shield.map((v,i)=>v-data.reports[0].shield[i]))>.5,'guard did not move the shield hand');
  for(const sample of data.guardSamples){
-  assert.ok(sample.forward>.999,'shield faces upward or sideways');assert.ok(sample.visor[2]<.124,'shield is behind the visor');
-  assert.ok(Math.abs(sample.visor[0])<.125&&sample.visor[1]>-.105&&sample.visor[1]<.175,'shield does not cover the visor center');assert.deepEqual(sample.armScale,[1,1,1]);
+  assert.ok(sample.forward>.85,'shield does not face the attacker');assert.ok(sample.hand[0]>.2,'left hand crossed to the face center');if(sample.amount===1)assert.ok(sample.hand[2]>.16,'left hand did not reach forward');
+  assert.equal(sample.blocksFace,false,'shield blocks the face');assert.equal(sample.helmetIntersections,0,`shield intersects the helmet at guard ${sample.amount}`);assert.deepEqual(sample.armScale,[1,1,1]);
  }
  assert.equal(data.female,'character-female-e');assert.equal(data.phoneParent,'arm-right');assert.equal(data.waves,true);
  for(const sample of data.mouthSamples){assert.ok(sample.gap<.005,'megaphone intake missed the mouth');assert.deepEqual(sample.hand,data.handAnchor,'prop left the hand');assert.deepEqual(sample.armScale,data.armScale,'arm was stretched');}
  assert.deepEqual(errors,[]);await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/character-equipment.png',fullPage:true});
  await page.locator('article').last().screenshot({path:'test-results/coordinator-mouth.png'});
+ await page.locator('article').nth(2).screenshot({path:'test-results/hero-left-guard.png'});
+ await page.goto(new URL('tests/character-review.html?view=side',base).href);await page.waitForFunction(()=>document.documentElement.dataset.reviewReady==='true');await page.locator('article').nth(2).screenshot({path:'test-results/hero-left-guard-side.png'});assert.deepEqual(errors,[]);
  await writeFile('test-results/equipment-report.json',JSON.stringify({date:new Date().toISOString(),poses:data.reports,guardSamples:data.guardSamples,animationFrames:data.frames.length,gripsStayAttached:true,originalHairHidden:true,coordinator:data.female,mouthAlignment:{frames:data.mouthSamples.length,maximumGap:Math.max(...data.mouthSamples.map(s=>s.gap)),handAttached:true,armUnstretched:true},errors},null,2));
  console.log('PASS helmet, 60 hand-grip frames, attack/guard, and 90 mouth-aligned megaphone frames without stretching');
 }finally{await browser.close();}

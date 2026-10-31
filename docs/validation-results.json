@@ -1221,7 +1221,7 @@
       "errors": []
     }
   },
-  "workstations_and_front_guard": {
+  "workstations_and_left_guard": {
     "scope": "Local Chrome; actual scene and original model surfaces; mobile viewport emulation only",
     "workstations": {
       "hands": [
@@ -1726,7 +1726,7 @@
       "errors": []
     },
     "equipment": {
-      "date": "2026-10-31T07:41:21.072Z",
+      "date": "2026-10-31T08:05:24.440Z",
       "poses": [
         {
           "id": "idle",
@@ -1769,20 +1769,20 @@
         {
           "id": "guard",
           "bounds": [
-            3.6467190886929366,
+            3.9427067580520303,
             6.68907578379792,
             5.928290190967081
           ],
-          "gearFloorMin": 0.3729519717796438,
+          "gearFloorMin": 0.3530330331991251,
           "sword": [
             0.2212172639453534,
             0.8273057889157243,
             1.9038551993475967
           ],
           "shield": [
-            1.2291325397689803,
-            2.9246490589313345,
-            -0.060352752624500905
+            1.2320269772990282,
+            1.3974511576788902,
+            -1.6152743306121071
           ]
         },
         {
@@ -1795,47 +1795,6 @@
           "gearFloorMin": null
         }
       ],
-      "guardSamples": [
-        {
-          "visor": [
-            -0.008231666712117051,
-            0.11685388471914313,
-            0.07894604022617092
-          ],
-          "forward": 0.9999999999999998,
-          "armScale": [
-            1,
-            1,
-            1
-          ]
-        },
-        {
-          "visor": [
-            -0.008231667055549348,
-            0.1168538848277948,
-            0.07894604120406956
-          ],
-          "forward": 1,
-          "armScale": [
-            1,
-            1,
-            1
-          ]
-        },
-        {
-          "visor": [
-            -0.008231667055549303,
-            0.1168538848277948,
-            0.07894604120406953
-          ],
-          "forward": 1,
-          "armScale": [
-            1,
-            1,
-            1
-          ]
-        }
-      ],
       "animationFrames": 60,
       "gripsStayAttached": true,
       "originalHairHidden": true,
@@ -1846,10 +1805,18 @@
         "handAttached": true,
         "armUnstretched": true
       },
-      "errors": []
+      "errors": [],
+      "guardMotion": {
+        "samples": 183,
+        "helmetIntersections": 0,
+        "faceOcclusions": 0,
+        "minimumLeftHandX": 0.2296269331095017,
+        "minimumExtendedHandZ": 0.17289164642823499,
+        "minimumForwardFacing": 0.8678191783796579
+      }
     },
     "browser": {
-      "date": "2026-10-31T07:44:22.244Z",
+      "date": "2026-10-31T08:07:07.959Z",
       "url": "http://127.0.0.1:4173/",
       "browser": "156.0.8078.74",
       "checks": [
@@ -1859,15 +1826,15 @@
         {
           "name": "Kenney ghost floats through approach and knockback without slime squash",
           "samples": 100,
-          "minimumHeight": 0.2701391999363102
+          "minimumHeight": 0.2701349857439339
         },
         {
           "name": "10-second autonomous activity and stable scene layout",
-          "fps": 60,
+          "fps": 60.1,
           "minimumOneSecondFPS": 60,
           "metrics": {
-            "walk": 1311,
-            "typing": 2524,
+            "walk": 1313,
+            "typing": 2532,
             "led": 25,
             "melee": 2,
             "breath": 1,
