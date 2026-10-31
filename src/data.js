@@ -1,7 +1,7 @@
 // Content is the only input for the scene, cards, history and bestiary.
 export const PRODUCT = { name: 'MDRM', current: '4.7.3', next: '4.7.4', releaseDate: '2026-11-14' };
 // 세밀한 픽셀 표현: 화면 밀도를 반영하되 렌더 비용에 상한을 둡니다.
-export const RENDERING = { maxSceneWidth: 1920, maxPixelRatio: 3, thumbnailSize: 384 };
+export const RENDERING = { maxSceneWidth: 3840, maxPixelRatio: 6, detailScale: 1.5, maxScenePixels: 8000000, thumbnailSize: 768 };
 export const GRADES = {
   low: { ko: '낮음', en: 'LOW', form: '꼬마 유령', color: '#4fd16b' },
   medium: { ko: '보통', en: 'MEDIUM', form: '유령', color: '#c79bff' },

@@ -3,14 +3,14 @@
 <style>*{box-sizing:border-box}body{margin:0;padding:24px;background:#0c0a1d;color:#f4efe0;font:15px/1.5 monospace}h1{font-size:24px;margin:0 0 8px}p{color:#b9c4ff;margin:0 0 20px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}article{border:1px solid #4a4383;padding:12px;background:#18152e}h2{font-size:17px;margin:0 0 10px}canvas{width:100%;height:400px;display:block}#stage{position:absolute;left:-2000px;top:0;width:1000px;height:700px}#overlay{display:none}button{margin:16px 8px 0 0;padding:10px}</style>
 <script type="importmap">{"imports":{"three":"../vendor/three/three.module.js","three/addons/":"../vendor/three/addons/"}}</script>
 <h1>키보드 위 타이핑 · 모델에 붙은 화면</h1><p>사무실의 실제 책상·직원·노트북을 가까이서 확인합니다.</p>
-<main class="grid"><article><h2>개발자 · 화면 정면</h2><canvas id="desk"></canvas></article><article><h2>개발자 · 손과 책상 높이</h2><canvas id="side"></canvas></article><article><h2>회의실 · 노트북 작업</h2><canvas id="laptop"></canvas></article></main>
+<main class="grid"><article><h2>개발자 · 화면 정면</h2><canvas id="desk"></canvas></article><article><h2>개발자 · 손과 책상 높이</h2><canvas id="side"></canvas></article><article><h2>회의실 · 노트북 작업</h2><canvas id="laptop"></canvas></article><article><h2>회의실 전체 · 네 의자</h2><canvas id="meeting-full"></canvas></article></main>
 <button id="step">다음 타이핑 프레임</button><button id="play">동작 재생</button>
 <div id="stage"><canvas id="office"></canvas><div id="overlay"></div></div>
 <script type="module">
 import * as THREE from 'three';import {OfficeScene} from '../src/scene.js';
 const office=new OfficeScene({canvas:document.querySelector('#office'),stage:document.querySelector('#stage'),overlay:document.querySelector('#overlay'),onLog(){},onCrew(){},onMotion(){},onReady(){}});office.reduced=true;await office.init();
 office.nextCrew=Infinity;office.nextBattle=Infinity;
-const views=[['desk',[-18,3.1,-11],[9,7,11],9],['side',[-18,2.8,-10.6],[12,3,0],8],['laptop',[18,3,-6.1],[8,7,10],8.5]].map(([id,center,offset,extent])=>{
+const views=[['desk',[-18,3.1,-11],[9,7,11],9],['side',[-18,2.8,-10.6],[12,3,0],8],['laptop',[18,3,-6.1],[8,7,10],8.5],['meeting-full',[18,2,-8.5],[15,15,15],20]].map(([id,center,offset,extent])=>{
  const canvas=document.getElementById(id),renderer=new THREE.WebGLRenderer({canvas,antialias:false,preserveDrawingBuffer:true});renderer.setPixelRatio(2);renderer.setSize(canvas.clientWidth,400,false);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.BasicShadowMap;
  const aspect=canvas.clientWidth/400,camera=new THREE.OrthographicCamera(-extent*aspect/2,extent*aspect/2,extent/2,-extent/2,.1,200);camera.position.set(...center).add(new THREE.Vector3(...offset));camera.lookAt(new THREE.Vector3(...center));return {renderer,camera};
 });
@@ -59,7 +59,8 @@ const chairFacing=office.meetingChairs.map(chair=>{
  chair.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(chair),points=[],point=new THREE.Vector3();
  chair.traverse(mesh=>{if(!mesh.isMesh)return;const position=mesh.geometry.attributes.position;for(const i of new Set(mesh.geometry.index.array)){point.fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld);if(point.y>b.min.y+(b.max.y-b.min.y)*.8)points.push(point.clone());}});
  const back=points.reduce((sum,p)=>sum.add(p),new THREE.Vector3()).divideScalar(points.length),towardTable=new THREE.Vector3(18,0,-8.5).sub(chair.position).setY(0).normalize();
- return {position:chair.position.toArray(),back:back.toArray(),backDotTable:back.sub(chair.position).setY(0).dot(towardTable)};
+ const tableGap=chair.position.x<12.5?12.5-b.max.x:chair.position.x>23.5?b.min.x-23.5:chair.position.z< -11.75?-11.75-b.max.z:null;
+ return {tableGap,position:chair.position.toArray(),back:back.toArray(),backDotTable:back.sub(chair.position).setY(0).dot(towardTable)};
 });
 office.nextCode=0;render(.25);window.__WORKSTATION_REVIEW__={samples,kneeSpace,chairFacing,displays:displayReports};document.documentElement.dataset.reviewReady='true';
 let time=.25,playing=false,last=0;function animate(now){if(!playing)return;time+=Math.min(.06,(now-last)/1000||0);last=now;render(time);requestAnimationFrame(animate);}document.querySelector('#step').onclick=()=>{time+=.14;render(time);};document.querySelector('#play').onclick=()=>{playing=!playing;last=0;document.querySelector('#play').textContent=playing?'동작 정지':'동작 재생';if(playing)requestAnimationFrame(animate);};

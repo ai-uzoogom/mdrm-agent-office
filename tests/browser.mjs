@@ -15,7 +15,7 @@ async function openPage({width=1280,height=1000,reduced='no-preference',source,d
  page.on('pageerror',error=>errors.push({type:'pageerror',message:String(error)}));
  page.on('console',message=>{if(message.type()==='error')errors.push({type:'console',message:message.text()});});
  page.on('response',response=>{if(response.status()>=400)errors.push({type:'http',url:response.url(),status:response.status()});});
- if(source)await page.route('**/src/data.js',route=>route.fulfill({status:200,contentType:'application/javascript',body:source}));
+ if(source)await page.route('**/src/data.js*',route=>route.fulfill({status:200,contentType:'application/javascript',body:source}));
  await page.goto(base,{waitUntil:'networkidle'});
  await page.waitForFunction(()=>document.documentElement.dataset.officeReady==='true',null,{timeout:25000});
  await page.evaluate(()=>document.fonts.ready);
@@ -62,8 +62,8 @@ try{
  assert.equal(await page.locator('[data-grade="low"] h3').textContent(),'꼬마 유령');
  assert.equal(await page.locator('[data-grade="medium"] h3').textContent(),'유령');
  assert.ok(await page.locator('[data-thumbnail]').evaluateAll((images,size)=>images.every(i=>i.complete&&i.naturalWidth===size&&i.naturalHeight===size),RENDERING.thumbnailSize));
- assert.equal((await snapshot(page)).target.width,1752);
- assert.equal(await page.locator('#office-canvas').evaluate(canvas=>canvas.width),2*(await snapshot(page)).viewport.width);
+ assert.equal((await snapshot(page)).target.width,2628);
+ assert.equal(await page.locator('#office-canvas').evaluate(canvas=>canvas.width),(await snapshot(page)).target.width);
  await checkSurfaceLabels(page);
  await screenshot(page,'desktop');
  record('1280px initial render, local assets, thumbnails and KST');

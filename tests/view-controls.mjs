@@ -42,7 +42,7 @@ try{
  assert.ok(await page.locator('#scene-pan-controls').isHidden());await checkLayout(page);
  for(let i=0;i<4;i++)await page.locator('#zoom-in').click();
  const enlarged=await snapshot(page),enlargedLabels=await labels(page);
- assert.equal(enlarged.view.zoom,2);assert.equal(await page.locator('#zoom-level').textContent(),'200%');
+ assert.equal(enlarged.view.zoom,2);assert.ok(enlarged.target.width>initial.target.width,'zoom did not increase render detail');assert.ok(enlarged.target.width*enlarged.target.height<=8005000,'render pixel budget exceeded');assert.equal(await page.locator('#zoom-level').textContent(),'200%');
  near(enlarged.crew[0].screen.x-enlarged.crew[1].screen.x,2*(initial.crew[0].screen.x-initial.crew[1].screen.x));
  for(let i=0;i<initialLabels.length;i++){near(enlargedLabels[i].scale,initialLabels[i].scale*2,.001);near(enlargedLabels[i].angle,initialLabels[i].angle,.001);}
  await capture(page,'view-desktop-200');
@@ -105,6 +105,11 @@ try{
  const afterTouch=await snapshot(mobile.page);near(afterTouch.hero.x,beforeTouch.hero.x+40,1);near(afterTouch.hero.y,beforeTouch.hero.y-24,1);
  assert.equal(await mobile.page.locator('#activity-log').textContent(),touchLog);
  await mobile.page.locator('#zoom-reset').tap();assert.equal((await snapshot(mobile.page)).view.zoom,1);
+ const pinchBefore=(await snapshot(mobile.page)).target.width;
+ await client.send('Emulation.setPageScaleFactor',{pageScaleFactor:2});await mobile.page.waitForFunction(width=>window.__OFFICE_DEBUG__.snapshot().target.width>width,pinchBefore);
+ assert.ok(await mobile.page.evaluate(()=>visualViewport.scale>1));
+ await client.send('Emulation.setPageScaleFactor',{pageScaleFactor:1});await mobile.page.waitForFunction(width=>window.__OFFICE_DEBUG__.snapshot().target.width===width,pinchBefore);
+ record('mobile browser pinch increases canvas resolution and restores it afterward');
  for(const viewport of [{width:375,height:812},{width:844,height:390}]){
   await mobile.page.setViewportSize(viewport);await mobile.page.waitForTimeout(120);await mobile.page.locator('#zoom-in').tap();await checkLayout(mobile.page);await mobile.page.locator('#zoom-reset').tap();
  }

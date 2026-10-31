@@ -72,7 +72,7 @@ export class OfficeScene {
     this.meetingDisplay=attachDisplay(this.meetingLaptop,'laptop',{color:'#c79bff'});this.meetingDisplay.update(0,'일정 점검');this.displays.push(this.meetingDisplay);
     box(room,2,.07,1.4,'#e5e4d8',14.6,2.65,-8.1);box(room,1.5,.07,1,'#c79bff',21,2.65,-9.5);
     this.meetingChairs=[];
-    for(const [x,z,rot] of [[11.1,-8.5,-Math.PI/2],[24.8,-8.5,Math.PI/2],[18,-3.7,0],[18,-13,Math.PI]]){
+    for(const [x,z,rot] of [[10.6,-8.5,-Math.PI/2],[25.3,-8.5,Math.PI/2],[18,-3.7,0],[18,-13.6,Math.PI]]){
       const chair=this.addProp('chairCushion',{h:rot===0?4:3.7,w:2.6,d:2.8},x,0,z,rot+Math.PI);this.meetingChairs.push(chair);if(rot===0)this.meetingChair=chair;
     }
     const board=group(room,18.2,7.1,-21);
@@ -239,6 +239,7 @@ export class OfficeScene {
     });
     document.addEventListener('visibilitychange',()=>this.updateMotion());
     window.addEventListener('resize',()=>this.resize());
+    window.visualViewport?.addEventListener('resize',()=>this.resize());
     this.motionQuery.addEventListener('change',event=>{this.reduced=event.matches;if(this.reduced){this.resetBattle();this.bubbles.forEach(b=>{b.fixed=true;b.el.hidden=false;});this.crewActors.forEach(a=>this.bubble(a,a.status,3,{fixed:true}));}else this.bubbles.forEach(b=>{b.fixed=false;b.until=this.elapsed+3;});this.updateMotion();});
     this.canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();if(this.raf)cancelAnimationFrame(this.raf);this.raf=null;this.onMotion('그래픽 연결이 중단되었습니다');});
     this.canvas.addEventListener('webglcontextrestored',()=>location.reload());
@@ -260,14 +261,19 @@ export class OfficeScene {
     const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
     const w=(maxX-minX)*1.08,h=(maxY-minY)*1.10,viewH=Math.max(h,w/aspect),viewW=viewH*aspect;
     this.viewFit={cx,cy,width:viewW,height:viewH};
-    const pixelRatio=Math.min(window.devicePixelRatio||1,RENDERING.maxPixelRatio);
-    this.renderer.setPixelRatio(pixelRatio);this.renderer.setSize(this.width,this.height,false);
-    const renderWidth=Math.min(RENDERING.maxSceneWidth,Math.round(this.width*pixelRatio));
-    this.renderTarget.setSize(renderWidth,Math.max(1,Math.round(renderWidth/aspect)));
     this.applyView();
+  }
+  updateRenderResolution(){
+    const pinch=Math.max(1,window.visualViewport?.scale??1);
+    const requested=(window.devicePixelRatio||1)*RENDERING.detailScale*Math.sqrt(this.zoom)*pinch;
+    const ratio=Math.min(requested,RENDERING.maxPixelRatio,RENDERING.maxSceneWidth/this.width,Math.sqrt(RENDERING.maxScenePixels/(this.width*this.height)));
+    const key=`${this.width}:${this.height}:${ratio.toFixed(4)}`;if(key===this.resolutionKey)return;this.resolutionKey=key;
+    this.renderer.setPixelRatio(ratio);this.renderer.setSize(this.width,this.height,false);
+    this.renderTarget.setSize(Math.round(this.width*ratio),Math.round(this.height*ratio));
   }
   applyView(){
     if(!this.viewFit)return;
+    this.updateRenderResolution();
     const fit=this.viewFit,maxX=fit.width*(1-1/this.zoom)/2,maxY=fit.height*(1-1/this.zoom)/2;
     this.viewPan.x=THREE.MathUtils.clamp(this.viewPan.x,-maxX,maxX);this.viewPan.y=THREE.MathUtils.clamp(this.viewPan.y,-maxY,maxY);
     const cx=fit.cx+this.viewPan.x,cy=fit.cy+this.viewPan.y;

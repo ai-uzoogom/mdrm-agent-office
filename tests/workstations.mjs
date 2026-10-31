@@ -11,7 +11,7 @@ try{
   const frames=data.samples.map(s=>s[actor].hands[hand]),positions=frames.map(f=>f.position),keyboard=data.samples[0][actor].keyboard;
   return {actor,side,minClearance:Math.min(...frames.map(f=>f.minimum[1]-keyboard.max.y)),motion:Math.max(...positions.map(p=>Math.hypot(...p.map((v,i)=>v-positions[0][i])))),range:[0,1,2].map(axis=>[Math.min(...positions.map(p=>p[axis])),Math.max(...positions.map(p=>p[axis]))])};
  })).flat(),displays:data.displays,errors};
- await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/workstations.png',fullPage:true});await writeFile('test-results/workstations-report.json',JSON.stringify(report,null,2));
+ await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/workstations.png',fullPage:true});await page.locator('article').last().screenshot({path:'test-results/meeting-chairs.png'});await writeFile('test-results/workstations-report.json',JSON.stringify(report,null,2));
  assert.deepEqual(errors,[]);
  for(const frame of data.samples)for(const actor of frame)assert.ok(actor.torso.min.z-actor.desk.max.z>=.12,'torso intersects the desk front');
  for(const desk of data.kneeSpace)for(const gap of desk)assert.ok(gap===Infinity||gap>.5,'closed desk panel blocks the knees');
@@ -20,13 +20,13 @@ try{
   assert.deepEqual(hand.scale,[1,1,1],'typing stretches the arm');assert.ok(hand.position[0]>actor.keyboard.min.x&&hand.position[0]<actor.keyboard.max.x,'hand is outside the keyboard width');
   assert.ok(hand.position[2]>actor.keyboard.min.z-.1&&hand.position[2]<actor.keyboard.max.z+.1,'hand is outside the keyboard depth');
  }
- for(const chair of data.chairFacing)assert.ok(chair.backDotTable<-.4,'chair back faces into the table');
+ for(const chair of data.chairFacing){assert.ok(chair.backDotTable<-.4,'chair back faces into the table');if(chair.tableGap!==null)assert.ok(chair.tableGap>=.3,'empty chair is tucked into the table');}
  assert.equal(report.displays.length,5);
  for(const display of report.displays){assert.ok(display.changedPixels>150,'display animation is visually static');for(const point of display.contact){assert.ok(point&&point.gap<.005,'display floats away from its native LCD');assert.ok(point.alignment>.9999,'display does not follow the native LCD tilt');}}
  await page.setViewportSize({width:390,height:844});await page.goto(process.env.OFFICE_URL||'http://127.0.0.1:4173/');await page.waitForFunction(()=>window.__OFFICE_DEBUG__?.snapshot().ready);
  for(const selector of ['.name-label','.wall-label','.monster-label','.board-label'])assert.notEqual(await page.locator(selector).first().evaluate(e=>getComputedStyle(e).display),'none');
  for(let i=0;i<5;i++)await page.getByRole('button',{name:'사무실 확대',exact:true}).click();
- assert.equal(await page.locator('#zoom-level').textContent(),'225%');await page.locator('#scene-stage').screenshot({path:'test-results/workstations-mobile-225.png'});
+ assert.equal(await page.locator('#zoom-level').textContent(),'225%');const detail=await page.evaluate(()=>window.__OFFICE_DEBUG__.snapshot());assert.ok(detail.target.width>=1580,'mobile zoom resolution stayed low');await page.locator('#scene-stage').screenshot({path:'test-results/workstations-mobile-225.png'});
  assert.deepEqual(errors,[]);
- console.log(`PASS ${data.samples.length*10} hand samples, original arm lengths, and 5 animated screens attached to their native LCD faces`);
+ console.log(`PASS 4 inward-facing chairs with table clearance, ${data.samples.length*10} hand samples, 5 attached displays, and higher-resolution mobile zoom`);
 }finally{await browser.close();}
