@@ -135,6 +135,18 @@ function faceInModelSpace(actor,mount,x=0,y=0,z=0) {
   const boneFrame=mount.parent.getWorldQuaternion(new THREE.Quaternion());
   mount.quaternion.copy(modelFrame.multiply(boneFrame).invert()).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)));
 }
+export function carryCoffee(actor,cup){
+  // Keep the native carrying arm pose while the rest of the rig walks/idles.
+  actor.setAction('holding-right');actor.mixer.update(.02);
+  const arm=actor.bones['arm-right'],carry=arm.quaternion.clone(),grip=handMount(actor,'right');
+  grip.add(cup);cup.scale.setScalar(1/actor.scale);
+  // The existing mug's handle center is (.36, .4, 0) in world-sized units.
+  cup.position.set(-.36/actor.scale,-.4/actor.scale,0);
+  actor.coffee=cup;actor.coffeeGrip=grip;actor.coffeeHandle=group(cup,.36,.4,0);
+  actor.setCoffeePose=()=>{arm.quaternion.copy(carry);faceInModelSpace(actor,grip);};
+  actor.setAction('idle');actor.mixer.update(0);actor.setCoffeePose();
+  return actor;
+}
 export function seatAtKeyboard(actor,{x,z,seatY,keyY,keyZ,spread=.62,phase=0,frontEdge}){
   clearHandTools(actor);
   actor.root.position.set(x,0,z);actor.root.rotation.y=Math.PI;actor.setAction('sit');actor.mixer.update(.02);actor.root.updateMatrixWorld(true);

@@ -5463,5 +5463,28 @@
       ],
       "errors": []
     }
+  },
+  "coffee_grip": {
+    "date": "2026-11-01T06:00:32.101Z",
+    "frames": 1800,
+    "simulationSeconds": 60,
+    "stops": [
+      "커피 타임",
+      "잠깐 산책",
+      "자리 복귀",
+      "커피 내리는 중"
+    ],
+    "actions": [
+      "idle",
+      "walk"
+    ],
+    "parent": "arm-right",
+    "maxHandHandleGap": 1.517719948885615e-14,
+    "minUpright": 1,
+    "reachRange": [
+      1.4836595463647826,
+      1.4836595509626387
+    ],
+    "errors": []
   }
 }

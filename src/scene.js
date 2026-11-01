@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PRODUCT, RENDERING, CREW, GRADES, activeIssues, issueLabel, particle, targetVersion, dDay } from './data.js';
-import { loadAssets, box, group, place, prop, mini, crewCharacter, seatAtKeyboard, hero, robot, monster, material, thumbnail } from './models.js';
+import { loadAssets, box, group, place, prop, mini, crewCharacter, carryCoffee, seatAtKeyboard, hero, robot, monster, material, thumbnail } from './models.js';
 import { attachDisplay } from './displays.js';
 
 const PALETTE={ wall:'#4a4383', partition:'#6a63a8', wood:['#b07c4c','#a06e42'], meeting:['#4d6199','#45578c'], server:['#323e60','#2b3654'] };
@@ -110,7 +110,7 @@ export class OfficeScene {
         actor.root.position.set(-11.5,0,-.9);actor.root.rotation.y=-Math.PI/2;actor.pathIndex=0;actor.wait=1.8;
       } else {
         actor.path=[{x:-25.2,z:-15.5,stop:1},{x:-25.2,z:-7,stop:0},{x:-25.2,z:-.9,stop:2},{x:-23.7,z:-.9,stop:3},{x:-25.2,z:-.9},{x:-25.2,z:-7}];actor.root.position.set(-25.2,0,-15.5);actor.pathIndex=1;actor.wait=.25;
-        this.mug(actor.root,-1.25,2.15,.7,'#f4efe0');
+        carryCoffee(actor,this.mug(null,0,0,0,'#f4efe0'));
       }
       this.crewActors.push(actor);this.register(actor,`crew-${i}`,()=>`${person.role} · ${actor.status}`);
       this.label('name-label',person.role,actor.root,5.15);
@@ -346,7 +346,7 @@ export class OfficeScene {
   update(dt){
     const t=this.elapsed;this.mixers.forEach(m=>m.update(dt));
     this.crewActors.forEach(actor=>{
-      if(actor.data.walker){this.walk(actor,dt);actor.setEncouragementPose?.(t,actor.wait>0);}
+      if(actor.data.walker){this.walk(actor,dt);actor.setEncouragementPose?.(t,actor.wait>0);actor.setCoffeePose?.();}
       else{
         actor.setTypingPose(t,actor.status);
         this.metrics.typing++;

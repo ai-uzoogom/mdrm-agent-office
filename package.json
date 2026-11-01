@@ -9,6 +9,7 @@
     "test:browser": "node tests/browser.mjs",
     "test:view": "node tests/view-controls.mjs",
     "test:equipment": "node tests/equipment.mjs",
+    "test:coffee": "node tests/coffee.mjs",
     "test:workstations": "node tests/workstations.mjs",
     "test:visibility": "node tests/visibility.mjs",
     "prepare:pages": "node scripts/prepare-pages.mjs"

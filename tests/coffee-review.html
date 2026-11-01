@@ -1,0 +1,38 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>커피 손잡이 결합 검증</title>
+<link rel="icon" href="../assets/favicon.svg">
+<style>*{box-sizing:border-box}body{margin:0;padding:24px;background:#0c0a1d;color:#f4efe0;font:15px/1.5 monospace}h1{margin:0 0 8px;font-size:24px}p{color:#b9c4ff}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}article{background:#18152e;border:1px solid #4a4383;padding:12px}h2{font-size:17px}canvas{width:100%;height:380px;display:block}#stage{position:absolute;left:-2000px;top:0;width:1000px;height:700px}#overlay{display:none}</style>
+<script type="importmap">{"imports":{"three":"../vendor/three/three.module.js","three/addons/":"../vendor/three/addons/"}}</script>
+<h1>운영 지원 · 손에 붙은 커피</h1><p>사무실의 실제 캐릭터와 컵 · 걷기와 대기 중 손잡이 밀착·수직 유지</p>
+<main class="grid"><article><h2>대기 · 정면</h2><canvas></canvas></article><article><h2>보행 · 측면</h2><canvas></canvas></article><article><h2>손잡이 · 정면 확대</h2><canvas></canvas></article><article><h2>손잡이 · 반대편 확대</h2><canvas></canvas></article></main>
+<div id="stage"><canvas id="office"></canvas><div id="overlay"></div></div>
+<script type="module">
+import * as THREE from 'three';import {OfficeScene} from '../src/scene.js';
+const office=new OfficeScene({canvas:document.querySelector('#office'),stage:document.querySelector('#stage'),overlay:document.querySelector('#overlay'),onLog(){},onCrew(){},onMotion(){},onReady(){}});office.reduced=true;await office.init();office.nextCrew=office.nextBattle=office.nextMeeting=Infinity;
+const actor=office.crewActors.find(a=>a.coffee),arm=actor.bones['arm-right'],points=[],point=new THREE.Vector3();
+// Sample actual animated skin vertices, independently of the prop mount.
+actor.model.traverse(mesh=>{
+ if(!mesh.isSkinnedMesh)return;const joint=mesh.skeleton.bones.indexOf(arm);if(joint<0)return;
+ const {position,skinIndex,skinWeight}=mesh.geometry.attributes,vertices=[];
+ for(const i of new Set(mesh.geometry.index.array))if([0,1,2,3].some(k=>skinIndex.getComponent(i,k)===joint&&skinWeight.getComponent(i,k)>.9)){
+  point.fromBufferAttribute(position,i).applyMatrix4(mesh.bindMatrix).applyMatrix4(mesh.skeleton.boneInverses[joint]);vertices.push({i,reach:Math.abs(point.x)});
+ }
+ const reach=Math.max(...vertices.map(p=>p.reach));points.push({mesh,indices:vertices.filter(p=>p.reach>reach*.65).map(p=>p.i)});
+});
+const samples=[],stops=new Set(),actions=new Set(),handBox=new THREE.Box3(),shoulder=new THREE.Vector3(),hand=new THREE.Vector3(),handle=new THREE.Vector3();
+for(let frame=0;frame<1800;frame++){
+ office.elapsed+=1/30;office.update(1/30);actor.root.updateMatrixWorld(true);handBox.makeEmpty();
+ for(const {mesh,indices} of points){mesh.skeleton.update();for(const i of indices)handBox.expandByPoint(arm.worldToLocal(mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld)));}
+ arm.localToWorld(handBox.getCenter(hand));actor.coffeeHandle.getWorldPosition(handle);arm.getWorldPosition(shoulder);
+ actions.add(actor.wait>0?'idle':'walk');stops.add(actor.status);
+ samples.push({gap:hand.distanceTo(handle),upright:new THREE.Vector3(0,1,0).applyQuaternion(actor.coffee.getWorldQuaternion(new THREE.Quaternion())).y,reach:hand.distanceTo(shoulder),armScale:arm.scale.toArray(),handle:handle.toArray()});
+}
+window.__COFFEE_REVIEW__={samples,stops:[...stops],actions:[...actions],parent:actor.coffeeGrip.parent.name,filename:actor.filename};
+// Render the same actor and mug from four useful angles, without room occlusion.
+const scene=new THREE.Scene();scene.background=new THREE.Color('#18152e');scene.add(actor.root,new THREE.HemisphereLight('#fff1da','#6d6595',2.25));const sun=new THREE.DirectionalLight('#ffe6c7',3.4);sun.position.set(-25,65,35);scene.add(sun);
+for(const [i,canvas] of [...document.querySelectorAll('article canvas')].entries()){
+ actor.root.position.set(0,0,0);actor.root.rotation.y=i===1?Math.PI/2:0;actor.setAction(i===1?'walk':'idle');actor.mixer.update(.24);actor.setCoffeePose();actor.root.updateMatrixWorld(true);
+ const center=i<2?new THREE.Vector3(0,2.5,0):actor.coffeeGrip.getWorldPosition(new THREE.Vector3()),extent=i<2?6.5:2.6,aspect=canvas.clientWidth/380,camera=new THREE.OrthographicCamera(-extent*aspect/2,extent*aspect/2,extent/2,-extent/2,.1,100);camera.position.copy(center).add(new THREE.Vector3(i===3?-9:9,5,12));camera.lookAt(center);
+ const renderer=new THREE.WebGLRenderer({canvas,antialias:false,preserveDrawingBuffer:true});renderer.setPixelRatio(2);renderer.setSize(canvas.clientWidth,380,false);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.render(scene,camera);
+}
+document.documentElement.dataset.reviewReady='true';
+</script></html>

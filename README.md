@@ -99,11 +99,12 @@ npm test
 npm run test:browser
 npm run test:view
 npm run test:equipment
+npm run test:coffee
 npm run test:workstations
 npm run test:visibility
 ```
 
-브라우저 테스트는 기본적으로 macOS의 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`을 사용합니다. 다른 환경에서는 `CHROME_PATH`를 지정합니다. 서버 주소는 `OFFICE_URL`로 변경할 수 있습니다. `test:view`는 확대·이동·리셋, 확대 상태의 캐릭터 클릭과 글자 정렬, 키보드·휠·터치 모사, 작은 화면 배치를 검사합니다. `test:equipment`는 60개 애니메이션 프레임의 손·장비 결합, 투구, 장비의 바닥 간섭, 공격·방어 자세와 새 직원의 소품을 검사합니다. `test:workstations`는 몸통 경계·무릎 공간과 모바일 225% 확대, 500개 실제 손 메시 표본의 키보드 간섭·움직임·팔 길이와 5개 화면의 원본 LCD 밀착·픽셀 변화를 검사합니다. `test:visibility`는 테스트 전용 창에서 세 직원의 전체 보행 경로, 독려 문구·소리 효과와 정지·복귀 조건을 검사합니다.
+브라우저 테스트는 기본적으로 macOS의 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`을 사용합니다. 다른 환경에서는 `CHROME_PATH`를 지정합니다. 서버 주소는 `OFFICE_URL`로 변경할 수 있습니다. `test:view`는 확대·이동·리셋, 확대 상태의 캐릭터 클릭과 글자 정렬, 키보드·휠·터치 모사, 작은 화면 배치를 검사합니다. `test:equipment`는 60개 애니메이션 프레임의 손·장비 결합, 투구, 장비의 바닥 간섭, 공격·방어 자세와 새 직원의 소품을 검사합니다. `test:coffee`는 실제 사무실 운영 지원 캐릭터의 보행·대기 1,800프레임에서 손 스킨과 컵 손잡이의 밀착, 컵 수직·팔 길이, 네 정차 지점을 확인합니다. `test:workstations`는 몸통 경계·무릎 공간과 모바일 225% 확대, 500개 실제 손 메시 표본의 키보드 간섭·움직임·팔 길이와 5개 화면의 원본 LCD 밀착·픽셀 변화를 검사합니다. `test:visibility`는 테스트 전용 창에서 세 직원의 전체 보행 경로, 독려 문구·소리 효과와 정지·복귀 조건을 검사합니다.
 
 [데스크톱 미리보기](docs/previews/desktop.png) · [모바일 미리보기](docs/previews/mobile.png) · [도감 미리보기](docs/previews/bestiary.png) · [영웅 장비·일정 독려 담당](docs/previews/equipment.png) · [타이핑·화면 확대](docs/previews/workstations.png)
 
