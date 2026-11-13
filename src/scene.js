@@ -7,12 +7,14 @@ const PALETTE={ wall:'#4a4383', partition:'#6a63a8', wood:['#b07c4c','#a06e42'],
 const VIEW={min:1,max:3,step:.25};
 const lerp=THREE.MathUtils.lerp, ease=t=>t*t*(3-2*t), random=(a,b)=>a+Math.random()*(b-a);
 export class OfficeScene {
-  constructor({canvas,stage,overlay,onLog,onCrew,onView=()=>{},onMotion,onReady,onGrave}) {
-    Object.assign(this,{canvas,stage,overlay,onLog,onCrew,onView,onMotion,onReady,onGrave});
+  constructor({canvas,stage,overlay,onLog,onCrew,onView=()=>{},onMotion,onReady,onGrave,onFloor=()=>{}}) {
+    Object.assign(this,{canvas,stage,overlay,onLog,onCrew,onView,onMotion,onReady,onGrave,onFloor});
     this.active = activeIssues();
     this.patches = patchRecords();
     this.peaceful = this.active.length === 0;
     this.graves = [];
+    this.floor = 'office';this.floorProgress=0;this.floorRaf=null;this.floorTransition=null;
+    this.floorViews={office:{zoom:1,pan:[0,0]},basement:{zoom:1.25,pan:[0,0]}};
     this.meetingStatus = this.peaceful ? '발행 기록 정리' : '일정 점검';
     this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0,encourage:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.surfaceLabels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.displays=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
     this.motionQuery=matchMedia('(prefers-reduced-motion: reduce)');this.reduced=this.motionQuery.matches;this.pointer=new THREE.Vector2();this.raycaster=new THREE.Raycaster();this.projectVector=new THREE.Vector3();this.raf=null;this.ready=false;this.battleCursor=2;
@@ -33,8 +35,13 @@ export class OfficeScene {
     this.blitScene=new THREE.Scene();this.blitCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
     this.blitScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.MeshBasicMaterial({map:this.renderTarget.texture,transparent:true,depthTest:false,depthWrite:false,toneMapped:false})));
     this.assets=await loadAssets();
-    this.buildRoom();this.buildCrew();this.buildServer();this.buildMonsters();this.buildGraveyard();
+    const lighting = new Set(this.scene.children);
+    this.buildRoom();this.buildCrew();this.buildServer();this.buildMonsters();
     if (!this.peaceful) this.buildEffects();
+    this.officeFloor=group();this.officeFloor.userData.floor='office';
+    for(const child of [...this.scene.children])if(!lighting.has(child))this.officeFloor.add(child);
+    this.scene.add(this.officeFloor);
+    this.buildGraveyard();this.applyFloorPosition(0);
     this.makeThumbnails();this.ready=true;
     this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(this.stage);this.resize();
     this.installEvents();
@@ -192,20 +199,86 @@ export class OfficeScene {
     return `v${PRODUCT.current} · ${this.peaceful ? '발행 완료' : '운영 중'}`;
   }
   buildGraveyard() {
+    this.basementFloor=group(this.scene);this.basementFloor.userData.floor='basement';
+    const room=this.basementFloor;
+    box(room,52,1.6,34,'#25253e',0,-1.1,0);
+    box(room,52.4,.35,34.4,'#5a5579',0,-.2,0);
+    for(let x=-24;x<=24;x+=4)for(let z=-15;z<=15;z+=5)
+      box(room,3.94,.18,4.94,(x/4+z/5)%2?'#323e60':'#2b3654',x,0,z);
+    box(room,52,7,.8,PALETTE.wall,0,3.5,-17);
+    box(room,.8,7,34,PALETTE.wall,-26,3.5,0);
+    box(room,52.5,.3,1.1,'#857dab',0,7.1,-17);
+    box(room,1.1,.3,34,'#857dab',-26,7.1,0);
+    for(const x of [-23,23]){
+      box(room,1.6,4.8,1.6,'#5a5579',x,2.4,-13);
+      box(room,1.9,.3,1.9,'#857dab',x,4.9,-13);
+      box(room,.7,.8,.7,'#4fd1c5',x,5.5,-13,true);
+    }
+    this.surfaceLabel('basement-title','B1 · 퇴치 묘역',room,{y:4.5,z:-16.55,width:23,height:2.6});
     for (const [index, record] of this.patches.slice(0, 6).entries()) {
       const {issue, version} = record;
-      const root = group(this.scene, -22.4 + (index % 3)*4.65, .06, 13.1 + Math.floor(index/3)*5.3);
-      this.addProp('grave-border', {h:.49,w:3.45,d:4.9}, 0, 0, .4, 0, root);
-      this.addProp('gravestone-round', {h:2.4,w:2.9,d:.92}, 0, .22, -1.32, 0, root);
+      const root = group(room, -15 + (index % 3)*15, .06, -3 + Math.floor(index/3)*12);
+      this.addProp('grave-border', {h:.7,w:5.5,d:7.5}, 0, 0, .4, 0, root);
+      this.addProp('gravestone-round', {h:3.8,w:4.6,d:1.4}, 0, .25, -2.25, 0, root);
       // Align the inscription with the recessed front face of the original GLB.
-      this.surfaceLabel('grave-inscription', issue.name, root, {y:1.23,z:-1.224,width:1.46,height:.64});
-      const grave = this.register({root,height:2.55,record}, `grave-${issue.id}`, () => `${issueLabel(issue)} · v${version} 퇴치 완료`);
+      this.surfaceLabel('grave-inscription', issue.name, root, {y:1.86,z:-2.104,width:2.32,height:1.02});
+      const grave = this.register({root,height:4.1,record}, `grave-${issue.id}`, () => `${issueLabel(issue)} · v${version} 퇴치 완료`);
       this.graves.push(grave);
+      this.label('name-label grave-name',issue.name,root,5.1);
     }
-    if (this.graves.length) {
-      const sign = group(this.scene, -24.4, 0, 18);
-      this.label('name-label peaceful-label', '퇴치 묘역', sign, 1.4);
+    this.basementMaterials=[];
+    const clones=new Map();
+    room.traverse(node=>{
+      if(!node.isMesh)return;
+      const clone=original=>{
+        if(!clones.has(original)){
+          const mat=original.clone();clones.set(original,mat);
+          this.basementMaterials.push({mat,color:mat.color.clone(),emissive:mat.emissive?.clone()});
+        }
+        return clones.get(original);
+      };
+      node.material=Array.isArray(node.material)?node.material.map(clone):clone(node.material);
+    });
+  }
+  objectFloor(object){
+    for(let node=object;node;node=node.parent)if(node.userData.floor)return node.userData.floor;
+    return 'office';
+  }
+  applyFloorPosition(progress){
+    this.floorProgress=progress;
+    this.officeFloor.position.y=progress*82;
+    this.officeFloor.visible=progress<1;
+    this.basementFloor.position.y=-20*(1-progress);
+    for(const {mat,color,emissive} of this.basementMaterials){
+      mat.color.copy(color).multiplyScalar(lerp(.16,.72,progress));
+      if(emissive)mat.emissive.copy(emissive).multiplyScalar(lerp(.12,.8,progress));
     }
+  }
+  finishFloorTransition(){
+    if(this.floorRaf)cancelAnimationFrame(this.floorRaf);
+    this.floorRaf=null;this.floorTransition=null;
+    this.applyFloorPosition(this.floor==='basement'?1:0);
+    this.stage.dataset.transitioning='false';
+    this.render();
+  }
+  selectFloor(floor){
+    if(!this.ready||!['office','basement'].includes(floor)||floor===this.floor)return;
+    this.floorViews[this.floor]={zoom:this.zoom,pan:this.viewPan.toArray()};
+    this.floor=floor;
+    this.zoom=this.floorViews[floor].zoom;this.viewPan.fromArray(this.floorViews[floor].pan);
+    if(this.floorRaf)cancelAnimationFrame(this.floorRaf);
+    this.floorTransition={from:this.floorProgress,to:floor==='basement'?1:0,start:performance.now()};
+    this.stage.dataset.floor=floor;this.stage.dataset.transitioning='true';
+    this.onFloor(floor);this.applyView();
+    if(this.reduced||document.hidden){this.finishFloorTransition();return;}
+    const step=now=>{
+      const transition=this.floorTransition;if(!transition)return;
+      const t=Math.min(1,(now-transition.start)/650);
+      this.applyFloorPosition(lerp(transition.from,transition.to,ease(t)));
+      if(t===1){this.finishFloorTransition();return;}
+      this.render();this.floorRaf=requestAnimationFrame(step);
+    };
+    this.floorRaf=requestAnimationFrame(step);
   }
   buildEffects(){
     this.sparks=group(this.scene);this.sparks.visible=false;
@@ -241,6 +314,8 @@ export class OfficeScene {
     if(this.ready&&(this.reduced||document.hidden))this.render();
   }
   describe(actor){
+    if(actor.switchFloor){this.selectFloor(actor.switchFloor);return;}
+    if(this.objectFloor(actor.root)!==this.floor){this.selectFloor(this.objectFloor(actor.root));return;}
     if (actor.record && this.onGrave) {
       this.onGrave(actor.record.issue.id);
       return;
@@ -310,6 +385,8 @@ export class OfficeScene {
       if(event.ctrlKey||event.metaKey||event.altKey)return;
       if(['+','='].includes(event.key))this.zoomBy(1);
       else if(['-','_'].includes(event.key))this.zoomBy(-1);
+      else if(event.key==='PageDown')this.selectFloor('basement');
+      else if(event.key==='PageUp')this.selectFloor('office');
       else if(event.key==='0'||event.key==='Home')this.resetView();
       else if(event.key.startsWith('Arrow'))this.moveView(event.key.slice(5).toLowerCase());
       else return;event.preventDefault();
@@ -323,8 +400,23 @@ export class OfficeScene {
   }
   hit(event){
     const rect=this.canvas.getBoundingClientRect();this.pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);this.raycaster.setFromCamera(this.pointer,this.camera);
-    const hits=this.raycaster.intersectObjects(this.targets,true);
-    for(const hit of hits){let node=hit.object;while(node){if(node.userData.actorKey)return this.actors.find(a=>a.key===node.userData.actorKey);node=node.parent;}}return null;
+    if(this.floorTransition)return null;
+    // The first visible surface occludes objects on the other floor.
+    const hits=this.raycaster.intersectObjects([this.officeFloor,this.basementFloor].filter(root=>root.visible),true);
+    const hit=hits[0];if(!hit)return null;
+    const floor=this.objectFloor(hit.object);
+    if(floor!==this.floor)return {switchFloor:floor};
+    for(let node=hit.object;node;node=node.parent){
+      if(node.userData.actorKey)return this.actors.find(a=>a.key===node.userData.actorKey);
+    }
+    if(this.floor==='basement'){
+      // Give small mobile tombstones a 44px touch area without covering the view.
+      const x=event.clientX-rect.left,y=event.clientY-rect.top;
+      return this.graves.map(actor=>({actor,p:this.project(actor.root,2.2)}))
+        .filter(({p})=>Math.abs(p.x-x)<=22&&Math.abs(p.y-y)<=22)
+        .sort((a,b)=>Math.hypot(a.p.x-x,a.p.y-y)-Math.hypot(b.p.x-x,b.p.y-y))[0]?.actor??null;
+    }
+    return null;
   }
   resize(){
     if(!this.ready)return;
@@ -333,7 +425,7 @@ export class OfficeScene {
     // Compute the full diorama's projected bounds, then fit with room for HTML bubbles.
     this.camera.left=-50;this.camera.right=50;this.camera.top=50;this.camera.bottom=-50;this.camera.updateProjectionMatrix();
     const coords=[];
-    for(const x of [-32,32])for(const y of [-3,15])for(const z of [-24,24])coords.push(new THREE.Vector3(x,y,z).applyMatrix4(this.camera.matrixWorldInverse));
+    for(const x of [-32,32])for(const y of [-13,15])for(const z of [-24,24])coords.push(new THREE.Vector3(x,y,z).applyMatrix4(this.camera.matrixWorldInverse));
     const minX=Math.min(...coords.map(p=>p.x)),maxX=Math.max(...coords.map(p=>p.x)),minY=Math.min(...coords.map(p=>p.y)),maxY=Math.max(...coords.map(p=>p.y));
     const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
     const w=(maxX-minX)*1.08,h=(maxY-minY)*1.10,viewH=Math.max(h,w/aspect),viewW=viewH*aspect;
@@ -380,6 +472,7 @@ export class OfficeScene {
   updateMotion(){
     if(this.raf)cancelAnimationFrame(this.raf);this.raf=null;this.lastTime=null;
     const paused=document.hidden||this.reduced;
+    if(paused&&this.floorTransition)this.finishFloorTransition();
     this.onMotion(this.reduced?'모션 줄이기 · 정지 화면':document.hidden?'잠시 쉬어가는 중':'자율 업무 진행 중');
     if(!this.ready)return;
     if(paused){if(!document.hidden)this.render();return;}
@@ -476,15 +569,18 @@ export class OfficeScene {
   }
   updateOverlays(){
     const occupied=[];
+    for(const entry of [...this.labels,...this.surfaceLabels]){
+      entry.el.style.visibility=this.objectFloor(entry.target??entry.anchor)===this.floor&&!this.floorTransition?'':'hidden';
+    }
     for(const entry of this.labels){
       const p=this.project(entry.target,entry.height);entry.el.style.transform=`translate(${Math.round(p.x)}px,${Math.round(p.y)}px) translate(-50%,-100%)`;
-      const w=entry.el.offsetWidth,h=entry.el.offsetHeight;if(w&&p.x>=0&&p.x<=this.width&&p.y>=0&&p.y<=this.height)occupied.push({x:p.x,y:p.y,w,h});
+      const w=entry.el.offsetWidth,h=entry.el.offsetHeight;if(entry.el.style.visibility!=='hidden'&&w&&p.x>=0&&p.x<=this.width&&p.y>=0&&p.y<=this.height)occupied.push({x:p.x,y:p.y,w,h});
     }
     for(const entry of this.surfaceLabels){
       const [tl,tr,bl]=entry.corners.map(p=>this.project(entry.point.copy(p).applyMatrix4(entry.anchor.matrixWorld)));
       // Orthographic projection is affine: map the entire HTML rectangle to the surface.
       entry.el.style.transform=`matrix(${(tr.x-tl.x)/entry.pixelWidth},${(tr.y-tl.y)/entry.pixelWidth},${(bl.x-tl.x)/entry.pixelHeight},${(bl.y-tl.y)/entry.pixelHeight},${tl.x},${tl.y})`;
-      if(entry.el.offsetWidth){
+      if(entry.el.style.visibility!=='hidden'&&entry.el.offsetWidth){
         const xs=[tl.x,tr.x,bl.x,tr.x+bl.x-tl.x],ys=[tl.y,tr.y,bl.y,tr.y+bl.y-tl.y];
         const left=Math.min(...xs),right=Math.max(...xs),top=Math.min(...ys),bottom=Math.max(...ys);
         occupied.push({x:(left+right)/2,y:bottom,w:right-left,h:bottom-top});
@@ -494,7 +590,7 @@ export class OfficeScene {
     for(const entry of this.bubbles){
       if(entry.el.hidden)continue;
       const center=this.project(entry.actor.root,(entry.actor.height??4.5)/2);
-      const outside=this.zoom>VIEW.min&&(center.x<0||center.x>this.width||center.y<0||center.y>this.height);
+      const outside=this.floor!=='office'||!!this.floorTransition||this.zoom>VIEW.min&&(center.x<0||center.x>this.width||center.y<0||center.y>this.height);
       entry.el.style.visibility=outside?'hidden':'';if(outside)continue;
       const p=this.project(entry.target,entry.height);const w=Math.min(this.width-14,entry.el.offsetWidth),h=entry.el.offsetHeight;
       const baseX=Math.max(w/2+6,Math.min(this.width-w/2-6,p.x)),baseY=Math.max(h+8,p.y);
@@ -515,7 +611,7 @@ export class OfficeScene {
     this.renderer.setRenderTarget(null);this.renderer.setClearColor(0x18152e,0);this.renderer.clear();this.renderer.render(this.blitScene,this.blitCamera);this.updateOverlays();this.frameCount++;
   }
   snapshot(){
-    const graves = this.graves.map(({record,root}) => ({id:record.issue.id,version:record.version,screen:this.project(new THREE.Vector3().setFromMatrixPosition(root.matrixWorld).add(new THREE.Vector3(0,1.45,-1.25)))}));
-    return {ready:this.ready,peaceful:this.peaceful,riftOpen:!!this.riftCore,graves,view:{zoom:this.zoom,pan:this.viewPan.toArray()},elapsed:this.elapsed,frames:this.frameCount,reduced:this.reduced,hidden:document.hidden,metrics:{...this.metrics},issues:this.monsters.map(a=>({id:a.issue.id,grade:a.issue.grade,kind:a.kind,height:a.height,scale:a.root.scale.toArray(),position:a.root.position.toArray(),screen:this.project(a.root,a.height*.45)})),crew:this.crewActors.map(a=>({key:a.key,status:a.status,model:a.filename,behavior:a.data.behavior,calling:a.calling,soundWaves:a.waves?.visible,position:a.root.position.toArray(),screen:this.project(a.root,2)})),hero:this.project(this.hero.root,3),pet:this.project(this.pet.root,2),rack:this.project(this.actors.find(a=>a.kind==='rack').root,4),assets:this.assets,target:{width:this.renderTarget.width,height:this.renderTarget.height},viewport:{width:this.width,height:this.height},drawCalls:this.sceneDrawCalls,walkObstacles:this.obstacles.map(({name,object})=>{const b=new THREE.Box3().setFromObject(object);return {name,min:b.min.toArray(),max:b.max.toArray()};})};
+    const graves = this.graves.map(({record,root}) => ({id:record.issue.id,version:record.version,screen:this.project(new THREE.Vector3().setFromMatrixPosition(root.matrixWorld).add(new THREE.Vector3(0,2.2,-2.1)))}));
+    return {floor:this.floor,floorProgress:this.floorProgress,transitioning:!!this.floorTransition,basementPreview:this.project(new THREE.Vector3(20,-20,16)),ready:this.ready,peaceful:this.peaceful,riftOpen:!!this.riftCore,graves,view:{zoom:this.zoom,pan:this.viewPan.toArray()},elapsed:this.elapsed,frames:this.frameCount,reduced:this.reduced,hidden:document.hidden,metrics:{...this.metrics},issues:this.monsters.map(a=>({id:a.issue.id,grade:a.issue.grade,kind:a.kind,height:a.height,scale:a.root.scale.toArray(),position:a.root.position.toArray(),screen:this.project(a.root,a.height*.45)})),crew:this.crewActors.map(a=>({key:a.key,status:a.status,model:a.filename,behavior:a.data.behavior,calling:a.calling,soundWaves:a.waves?.visible,position:a.root.position.toArray(),screen:this.project(a.root,2)})),hero:this.project(this.hero.root,3),pet:this.project(this.pet.root,2),rack:this.project(this.actors.find(a=>a.kind==='rack').root,4),assets:this.assets,target:{width:this.renderTarget.width,height:this.renderTarget.height},viewport:{width:this.width,height:this.height},drawCalls:this.sceneDrawCalls,walkObstacles:this.obstacles.map(({name,object})=>{const b=new THREE.Box3().setFromObject(object);return {name,min:b.min.toArray(),max:b.max.toArray()};})};
   }
 }

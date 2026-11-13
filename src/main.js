@@ -32,7 +32,7 @@ function renderUI(){
  $('#issue-count').textContent = `남은 몬스터 ${active.length}마리`;
  $('#server-state').textContent = peaceful ? '평화' : '방어 중';
  if (peaceful) {
-  $('#office-canvas').setAttribute('aria-label', '아이소메트릭 MDRM 오피스. 서버실 균열이 봉인되고 용사와 AGENT가 휴식합니다. 서버랙 앞 퇴치 묘역에 패치된 몬스터가 기록되어 있습니다.');
+  $('#office-canvas').setAttribute('aria-label', '아이소메트릭 MDRM 오피스. 서버실 균열이 봉인되고 용사와 AGENT가 휴식합니다. 지하층 퇴치 묘역에 패치된 몬스터가 기록되어 있습니다.');
  }
  $('#crew-count').textContent=String(CREW.length).padStart(2,'0');
  $('#agent-list').innerHTML=CREW.map((p,i)=>`<button class="agent-row" type="button" data-inspect="crew-${i}" aria-label="${esc(p.role)} 상태 보기"><span class="crew-dot" style="--crew-color:${p.shirt}"></span><span>${esc(p.role)}</span><span class="agent-status" id="crew-status-${i}">${esc(p.statuses?.[0]??p.stops[0])}</span></button>`).join('');
@@ -83,6 +83,12 @@ function renderUI(){
 }
 function setCrew(i,status){const el=$(`#crew-status-${i}`);if(!el)return;el.textContent=status;el.classList.toggle('warn',/확인 필요/.test(status));el.classList.toggle('good',/커밋|통과|완료/.test(status));}
 function setView({zoom}){ $('#office-canvas').setAttribute('aria-description',`현재 확대 비율 ${Math.round(zoom*100)}%. 0 또는 Home 키로 전체 보기.`); }
+function setFloor(floor){
+ const basement=floor==='basement';
+ document.querySelectorAll('.floor-navigation [data-floor]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.floor===floor)));
+ $('#floor-status').textContent=basement?'현재 지하 1층 퇴치 묘역. 묘비를 누르면 패치 기록을 봅니다.':'현재 1층 오피스. 어두운 지하층을 눌러 묘역으로 이동합니다.';
+ $('#office-canvas').setAttribute('aria-label',basement?'지하 1층 퇴치 묘역. 패치된 몬스터의 묘비를 눌러 기록을 봅니다.':'1층 MDRM 오피스. 아래 어두운 지하층을 누르면 퇴치 묘역으로 이동합니다.');
+}
 function setupTabs(){
  const tabs=[...document.querySelectorAll('[role="tab"]')];
  const activate=tab=>{tabs.forEach(other=>{const active=tab===other;other.setAttribute('aria-selected',String(active));other.tabIndex=active?0:-1;document.getElementById(other.getAttribute('aria-controls')).hidden=!active;});};
@@ -105,9 +111,11 @@ function markReady(instance){
 async function start(){
  try{
   renderUI();setupTabs();
-  office=new OfficeScene({canvas:$('#office-canvas'),stage:$('#scene-stage'),overlay:$('#scene-overlays'),onLog:log,onCrew:setCrew,onView:setView,onMotion:text=>{const el=$('#motion-state');el.replaceChildren();const dot=document.createElement('i');dot.className='status-dot';el.append(dot,document.createTextNode(text));},onReady:markReady,onGrave:showPatchRecord});
+  office=new OfficeScene({canvas:$('#office-canvas'),stage:$('#scene-stage'),overlay:$('#scene-overlays'),onLog:log,onCrew:setCrew,onView:setView,onMotion:text=>{const el=$('#motion-state');el.replaceChildren();const dot=document.createElement('i');dot.className='status-dot';el.append(dot,document.createTextNode(text));},onReady:markReady,onGrave:showPatchRecord,onFloor:setFloor});
 
   document.addEventListener('click', event => {
+   const floorButton=event.target.closest('.floor-navigation [data-floor]');
+   if(floorButton)office.selectFloor(floorButton.dataset.floor);
    if (event.target.closest('[data-open-patches]')) showPatchRecord();
    const button = event.target.closest('[data-inspect]');
    if (button && !button.disabled && office.ready) office.inspect(button.dataset.inspect);

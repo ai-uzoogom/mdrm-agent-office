@@ -47,3 +47,14 @@
 }
 .patch-link:hover { border-color: var(--teal); }
 .patch-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* Floor navigation sits outside the canvas, leaving the diorama unobstructed. */
+.floor-navigation { display:flex; flex-shrink:0; gap:1px; padding:0 10px; border-top:1px solid var(--border-soft); background:var(--win-deep); }
+.floor-navigation button { display:flex; align-items:center; justify-content:center; gap:9px; min-height:44px; flex:1; padding:6px 10px; border:0; border-bottom:2px solid transparent; background:transparent; color:var(--mute); font-size:12px; }
+.floor-navigation button[aria-pressed="true"] { color:var(--cream); border-bottom-color:var(--teal); background:#4fd1c510; }
+.floor-navigation button:hover { color:var(--cream); background:#ffffff0a; }
+.floor-navigation button:focus-visible { outline-offset:-3px; }
+.basement-title { color:var(--cream); font:700 30px/1.2 var(--font-ko); }
+.grave-name { color:var(--cream); border-color:var(--teal); }
+.scene-stage[data-floor="basement"] .scene-coordinate { display:none; }
+.scene-stage[data-transitioning="true"] #office-canvas { cursor:progress; }

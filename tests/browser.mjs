@@ -162,8 +162,10 @@ try{
  assert.ok(later.metrics.walk>0&&later.metrics.typing>0);
  for(const key of ['combat','melee','breath'])assert.equal(later.metrics[key],0);
  await screenshot(released.page,'peace-desktop');
+ await released.page.locator('button[data-floor="basement"]').click();
+ await released.page.waitForFunction(()=>!window.__OFFICE_DEBUG__.snapshot().transitioning);
  const canvas=await released.page.locator('#office-canvas').boundingBox();
- for(const grave of later.graves){
+ for(const grave of (await snapshot(released.page)).graves){
   await released.page.mouse.click(canvas.x+grave.screen.x,canvas.y+grave.screen.y);
   assert.equal(await released.page.evaluate(()=>document.activeElement.id),`patch-${grave.id}`);
   await released.page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
