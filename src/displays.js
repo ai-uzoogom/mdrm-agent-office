@@ -19,7 +19,7 @@ export function attachDisplay(object,type,{color='#4fd16b',seed=0}={}){
   let previous='';
   const display={mesh,canvas,texture,surface,face,normal,update(time,status='타이핑…'){
     const tick=Math.floor(time*7),key=`${tick}:${status}`;if(key===previous)return;previous=key;
-    const testing=/테스트|빌드|검수|확인/.test(status),done=/커밋|통과/.test(status),warning=/확인 필요/.test(status),meeting=type==='laptop';
+    const testing=/테스트|빌드|검수|확인/.test(status),done=/커밋|통과|완료/.test(status),warning=/확인 필요/.test(status),meeting=type==='laptop';
     ctx.fillStyle='#142638';ctx.fillRect(0,0,256,160);
     ctx.fillStyle='#263e55';ctx.fillRect(0,0,256,15);ctx.fillRect(0,15,36,145);
     ctx.fillStyle=color;ctx.fillRect(7,5,5,5);ctx.fillRect(44,5,54,4);

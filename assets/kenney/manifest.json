@@ -190,5 +190,17 @@
     "file": "character-female-e.glb",
     "sha256": "3ee3939f80d718945fcb9199f909a92c39669e38aeec7f544536b5dce6e79f98",
     "bytes": 248012
+  },
+  {
+    "pack": "graveyard-kit",
+    "file": "grave-border.glb",
+    "sha256": "ab330ef153b3616967346cc4db3df942bd54661e538dcb938fb0e80b3077250a",
+    "bytes": 57352
+  },
+  {
+    "pack": "graveyard-kit",
+    "file": "gravestone-round.glb",
+    "sha256": "20574c84e41990d7143cdb1201d8318e875a326fe605512a7c82bac3086c8db0",
+    "bytes": 16832
   }
 ]

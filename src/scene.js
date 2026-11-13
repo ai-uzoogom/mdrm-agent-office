@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PRODUCT, RENDERING, CREW, GRADES, activeIssues, issueLabel, particle, targetVersion, dDay } from './data.js';
+import { PRODUCT, NEXT_RELEASE, RENDERING, CREW, GRADES, activeIssues, patchRecords, issueLabel, particle, targetVersion, dDay } from './data.js';
 import { loadAssets, box, group, place, prop, mini, crewCharacter, carryCoffee, seatAtKeyboard, hero, robot, monster, material, thumbnail } from './models.js';
 import { attachDisplay } from './displays.js';
 
@@ -7,8 +7,13 @@ const PALETTE={ wall:'#4a4383', partition:'#6a63a8', wood:['#b07c4c','#a06e42'],
 const VIEW={min:1,max:3,step:.25};
 const lerp=THREE.MathUtils.lerp, ease=t=>t*t*(3-2*t), random=(a,b)=>a+Math.random()*(b-a);
 export class OfficeScene {
-  constructor({canvas,stage,overlay,onLog,onCrew,onView=()=>{},onMotion,onReady}) {
-    Object.assign(this,{canvas,stage,overlay,onLog,onCrew,onView,onMotion,onReady});
+  constructor({canvas,stage,overlay,onLog,onCrew,onView=()=>{},onMotion,onReady,onGrave}) {
+    Object.assign(this,{canvas,stage,overlay,onLog,onCrew,onView,onMotion,onReady,onGrave});
+    this.active = activeIssues();
+    this.patches = patchRecords();
+    this.peaceful = this.active.length === 0;
+    this.graves = [];
+    this.meetingStatus = this.peaceful ? '발행 기록 정리' : '일정 점검';
     this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0,encourage:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.surfaceLabels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.displays=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
     this.motionQuery=matchMedia('(prefers-reduced-motion: reduce)');this.reduced=this.motionQuery.matches;this.pointer=new THREE.Vector2();this.raycaster=new THREE.Raycaster();this.projectVector=new THREE.Vector3();this.raf=null;this.ready=false;this.battleCursor=2;
     this.nextCrew=1.6;this.nextLed=.4;this.nextCode=.13;this.nextBattle=1.8;this.nextMeeting=5;this.lastCalendar=0;
@@ -28,12 +33,18 @@ export class OfficeScene {
     this.blitScene=new THREE.Scene();this.blitCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
     this.blitScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.MeshBasicMaterial({map:this.renderTarget.texture,transparent:true,depthTest:false,depthWrite:false,toneMapped:false})));
     this.assets=await loadAssets();
-    this.buildRoom();this.buildCrew();this.buildServer();this.buildMonsters();this.buildEffects();
+    this.buildRoom();this.buildCrew();this.buildServer();this.buildMonsters();this.buildGraveyard();
+    if (!this.peaceful) this.buildEffects();
     this.makeThumbnails();this.ready=true;
     this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(this.stage);this.resize();
     this.installEvents();
-    this.onLog('오피스 오픈 · v'+PRODUCT.next+' 릴리스를 준비합니다','special');
-    this.onLog('MDRM 용사와 AGENT가 방어선을 지키는 중','good');
+    if (this.peaceful && this.patches.length) {
+      this.onLog(`MDRM v${PRODUCT.current} 발행 완료 · 패치 ${this.patches.filter(record => record.version === PRODUCT.current).length}건`, 'special');
+      this.onLog('모든 몬스터 퇴치 · 서버실 평화', 'good');
+    } else {
+      this.onLog('오피스 오픈', 'special');
+      this.onLog(this.peaceful ? '서버실 평온' : 'MDRM 용사와 AGENT가 방어선을 지키는 중', 'good');
+    }
     this.onReady(this);
     this.updateMotion();
   }
@@ -69,7 +80,7 @@ export class OfficeScene {
     for(const [x,z,h] of [[-27,18,5],[1,-19,4.7],[28,-19.8,4.5],[7,-18,3.9]])this.addProp('pottedPlant',{h},x,0,z);
     this.meetingTable=this.addProp('table',{h:2.55,w:11,d:6.5},18,0,-8.5);
     this.meetingLaptop=this.addProp('laptop',{h:1.55,w:2.6,d:2.2},18,2.55,-6.4);
-    this.meetingDisplay=attachDisplay(this.meetingLaptop,'laptop',{color:'#c79bff'});this.meetingDisplay.update(0,'일정 점검');this.displays.push(this.meetingDisplay);
+    this.meetingDisplay=attachDisplay(this.meetingLaptop,'laptop',{color:'#c79bff'});this.meetingDisplay.update(0,this.meetingStatus);this.displays.push(this.meetingDisplay);
     box(room,2,.07,1.4,'#e5e4d8',14.6,2.65,-8.1);box(room,1.5,.07,1,'#c79bff',21,2.65,-9.5);
     this.meetingChairs=[];
     for(const [x,z,rot] of [[10.6,-8.5,-Math.PI/2],[25.3,-8.5,Math.PI/2],[18,-3.7,0],[18,-13.6,Math.PI]]){
@@ -78,8 +89,8 @@ export class OfficeScene {
     const board=group(room,18.2,7.1,-21);
     box(board,15.8,6.3,.4,'#34334f',0,0,-.3);box(board,15.1,5.6,.22,'#f4efe0');
     box(board,15.7,.2,.8,'#aaa8b8',0,-3.15,.2);
-    for(let i=0;i<3;i++){box(board,3.4,1.1,.08,['#ff8a86','#f6a050','#c79bff'][i],-4.3+i*4.25,-.9,.18);box(board,2.8,.12,.09,'#bfc5bb',-4.3+i*4.25,-1.85,.18);}
-    this.boardLabel=this.surfaceLabel('board-label',`v${PRODUCT.next} · ${dDay()}`,board,{y:1.3,z:.13,width:13,height:1.8});
+    for(let i=0;i<3;i++){box(board,3.4,1.1,.08,this.peaceful?'#4fd1c5':['#ff8a86','#f6a050','#c79bff'][i],-4.3+i*4.25,-.9,.18);box(board,2.8,.12,.09,'#bfc5bb',-4.3+i*4.25,-1.85,.18);}
+    this.boardLabel=this.surfaceLabel('board-label',this.boardTitle(),board,{y:1.3,z:.13,width:13,height:1.8});
     this.surfaceLabel('wall-label','개발실',sideWall,{x:.57,y:3.8,z:-8,width:10,height:2.6,rotation:Math.PI/2});
     this.surfaceLabel('wall-label','회의실',backWall,{x:5.2,y:3.2,z:.57,width:9.5,height:2.6});
     this.surfaceLabel('wall-label server','서버실',sideWall,{x:.57,y:3.8,z:11,width:10,height:2.6,rotation:Math.PI/2});
@@ -117,8 +128,8 @@ export class OfficeScene {
       this.onCrew(i,actor.status);this.bubble(actor,actor.status,4.5,{fixed:this.reduced});
     });
     const meeting=mini(1,'#5263a4',4.5);this.scene.add(meeting.root);seatAtKeyboard(meeting,{x:18,z:-4.2,seatY:1.85,keyY:2.68,keyZ:-5.85,spread:.48,phase:2.1,frontEdge:new THREE.Box3().setFromObject(this.meetingTable).max.z});this.meetingChair.position.z=meeting.root.position.z;this.mixers.push(meeting.mixer);this.meeting=meeting;
-    this.register(meeting,'meeting',()=>`v${PRODUCT.next} 일정 점검 · 이슈 ${activeIssues().length}건 확인`);
-    this.bubble(meeting,`v${PRODUCT.next} 일정 점검`,4,{fixed:this.reduced});
+    this.register(meeting,'meeting',()=>`v${NEXT_RELEASE?.ver ?? PRODUCT.current} · ${this.meetingStatus}`);
+    this.bubble(meeting,this.meetingStatus,4,{fixed:this.reduced});
   }
   mug(parent,x,y,z,color){const g=group(parent,x,y,z);box(g,.53,.7,.53,color,0,.35,0);box(g,.37,.05,.37,'#795c4f',0,.72,0);box(g,.24,.4,.13,color,.36,.4,0);return g;}
   buildServer(){
@@ -134,22 +145,33 @@ export class OfficeScene {
       }
       const rack={root,height:7.2,kind:'rack'};this.register(rack,`rack-${i}`,()=> '모든 서비스 정상 동작 중');
     }
-    for(let z=4.6;z<22;z+=2.2)box(this.scene,.35,.04,1.25,'#f5c542',9.8,.13,z,true);
+    if (!this.peaceful) {
+      for(let z=4.6;z<22;z+=2.2)box(this.scene,.35,.04,1.25,'#f5c542',9.8,.13,z,true);
+    }
     this.hero=hero();this.scene.add(this.hero.root);this.hero.root.position.set(6.5,0,14.7);this.hero.root.rotation.y=Math.PI/2;this.hero.home=this.hero.root.position.clone();this.mixers.push(this.hero.mixer);
-    this.register(this.hero,'hero',()=> '방어선은 내가 지킨다');this.label('name-label hero','HERO · MDRM',this.hero.root,6.5);
-    this.bubble(this.hero,'오늘도 이상 무!',5,{fixed:this.reduced});
+    if (this.peaceful) this.hero.root.rotation.y = Math.PI/4;
+    this.register(this.hero,'hero',()=> this.peaceful ? '전투 끝. 이제 한숨 돌리자!' : '방어선은 내가 지킨다');this.label('name-label hero','HERO · MDRM',this.hero.root,6.5);
+    this.bubble(this.hero,this.peaceful ? '서버실에 평화가 돌아왔어요' : '오늘도 이상 무!',5,{fixed:this.reduced});
     this.pet=robot();this.scene.add(this.pet.root);this.pet.root.position.set(2.7,0,18.7);this.pet.root.rotation.y=Math.PI/3;this.pet.home=this.pet.root.position.clone();
     this.register(this.pet,'pet',()=> '삐빅!');this.label('name-label pet','PET · AGENT',this.pet.root,4.8);this.bubble(this.pet,'삐빅!',4,{fixed:this.reduced});
     // A voxel fissure, painted light and emissive geometry keep the one-sun lighting setup.
-    const rift=group(this.scene,27,0,3.4);this.rift=rift;
+    const rift=group(this.scene,27,0,3.4);
     for(const [x,y,w,h] of [[-2.3,3,1.5,6],[2.3,3.7,1.5,7.4],[-.7,7,1.8,1.4],[1.2,7.6,1.7,1.3]])box(rift,w,h,1.4,'#54486d',x,y,0);
+    if (this.peaceful) {
+      box(rift, 3.35, 6.5, .34, '#343e57', 0, 3.25, .41);
+      for (const angle of [-Math.PI/4, Math.PI/4]) {
+        box(rift, .26, 3.35, .15, '#4fd1c5', 0, 3.7, .69, true).rotation.z = angle;
+      }
+      this.label('name-label peaceful-label', '균열 봉인', rift, 8.85);
+      return;
+    }
     const riftMaterial=new THREE.MeshStandardMaterial({color:'#ef5350',emissive:'#ef5350',emissiveIntensity:1.8,transparent:true,opacity:.8});
     this.riftCore=box(rift,2.1,5.7,.3,riftMaterial,0,3.3,.4);
     for(let i=0;i<5;i++)box(rift,.65,1.3,.2,'#ff9681',i%2?.4:-.25,1+i*1.1,.65,true).rotation.z=i%2?.3:-.3;
     const aura=new THREE.Mesh(new THREE.CircleGeometry(4,16),new THREE.MeshBasicMaterial({color:'#ef5350',transparent:true,opacity:.16,depthWrite:false}));aura.rotation.x=-Math.PI/2;aura.position.set(27,.18,5.8);this.scene.add(aura);this.riftAura=aura;
   }
   buildMonsters(){
-    const issues=activeIssues();const count=issues.length;
+    const issues=this.active;const count=issues.length;
     // Dynamic rows reserve the whole invasion lane; additions never need a new placement table.
     const rows=Math.ceil(count/2),spacing=Math.min(6.7,15/Math.max(1,rows-1));
     issues.forEach((issue,i)=>{
@@ -157,12 +179,33 @@ export class OfficeScene {
       actor.root.position.set(x,actor.hoverHeight??0,z);actor.root.rotation.y=-Math.PI/2;actor.home=actor.root.position.clone();actor.baseScale=actor.root.scale.clone();actor.issue=issue;actor.height=actor.height??5.4;
       if(count>6){const s=Math.max(.48,Math.min(1,Math.sqrt(6/count)));actor.root.scale.multiplyScalar(s);actor.baseScale.copy(actor.root.scale);actor.height*=s;}
       if(actor.mixer)this.mixers.push(actor.mixer);
-      this.register(actor,`issue-${issue.id}`,()=>`${issueLabel(issue)} · ${GRADES[issue.grade].ko} · ${targetVersion(issue)}에서 퇴치 예정`);
+      const version = targetVersion(issue);
+      this.register(actor,`issue-${issue.id}`,()=>`${issueLabel(issue)} · ${GRADES[issue.grade].ko} · ${version ? `v${version}에서 퇴치 예정` : '패치 대기 중'}`);
       this.monsters.push(actor);
       const el=this.label('monster-label','',actor.root,actor.height+1.1);
       const badge=document.createElement('span');badge.className='grade-badge';badge.style.setProperty('--grade-color',GRADES[issue.grade].color);badge.textContent=GRADES[issue.grade].en;
       const name=document.createElement('span');name.textContent=issue.name;el.append(badge,name);
     });
+  }
+  boardTitle() {
+    if (NEXT_RELEASE) return `v${NEXT_RELEASE.ver} · ${dDay(NEXT_RELEASE.date)}`;
+    return `v${PRODUCT.current} · ${this.peaceful ? '발행 완료' : '운영 중'}`;
+  }
+  buildGraveyard() {
+    for (const [index, record] of this.patches.slice(0, 6).entries()) {
+      const {issue, version} = record;
+      const root = group(this.scene, -22.4 + (index % 3)*4.65, .06, 13.1 + Math.floor(index/3)*5.3);
+      this.addProp('grave-border', {h:.49,w:3.45,d:4.9}, 0, 0, .4, 0, root);
+      this.addProp('gravestone-round', {h:2.4,w:2.9,d:.92}, 0, .22, -1.32, 0, root);
+      // Align the inscription with the recessed front face of the original GLB.
+      this.surfaceLabel('grave-inscription', issue.name, root, {y:1.23,z:-1.224,width:1.46,height:.64});
+      const grave = this.register({root,height:2.55,record}, `grave-${issue.id}`, () => `${issueLabel(issue)} · v${version} 퇴치 완료`);
+      this.graves.push(grave);
+    }
+    if (this.graves.length) {
+      const sign = group(this.scene, -24.4, 0, 18);
+      this.label('name-label peaceful-label', '퇴치 묘역', sign, 1.4);
+    }
   }
   buildEffects(){
     this.sparks=group(this.scene);this.sparks.visible=false;
@@ -198,6 +241,10 @@ export class OfficeScene {
     if(this.ready&&(this.reduced||document.hidden))this.render();
   }
   describe(actor){
+    if (actor.record && this.onGrave) {
+      this.onGrave(actor.record.issue.id);
+      return;
+    }
     const text=actor.describe();this.bubble(actor,text,4.5);this.onLog(text,actor===this.hero||actor===this.pet?'good':'');
     if(actor===this.pet&&!this.reduced)this.pet.jumpUntil=this.elapsed+.85;
   }
@@ -352,12 +399,25 @@ export class OfficeScene {
         this.metrics.typing++;
       }
     });
-    this.meeting.setTypingPose(t,'일정 점검');
+    this.meeting.setTypingPose(t,this.meetingStatus);
     if(t>=this.nextCrew){this.nextCrew=t+random(1.6,2.8);const actor=this.crewActors[Math.floor(Math.random()*4)];actor.statusIndex=(actor.statusIndex+1)%actor.data.statuses.length;actor.status=actor.data.statuses[actor.statusIndex];this.onCrew(actor.index,actor.status);this.bubble(actor,actor.status);this.onLog(`${actor.data.role} · ${actor.status}`,/확인 필요/.test(actor.status)?'warn':/커밋|통과/.test(actor.status)?'good':'');}
-    if(t>=this.nextCode){this.nextCode=t+.14;this.crewActors.forEach(actor=>actor.display?.update(t,actor.status));this.meetingDisplay.update(t,'일정 점검');}
-    if(t>=this.nextLed){this.nextLed=t+.4;this.metrics.led++;this.leds.forEach(led=>{const r=Math.random(),color=r<.78?'#4fd16b':r<.87?'#f5c542':r<.97?'#4fb3ff':'#ff8a86';led.material.color.set(color);led.material.emissive.set(color);led.material.emissiveIntensity=Math.random()>.12?1.4:.15;});}
-    if(t>=this.nextMeeting){this.nextMeeting=t+random(6,9);const options=[`${PRODUCT.next} 일정 점검`,`이슈 ${activeIssues().length}건 확인`,`발행 ${dDay()}`];const text=options[Math.floor(t)%options.length];this.bubble(this.meeting,text);this.onLog(`회의실 · ${text}`);}
-    this.riftCore.material.emissiveIntensity=1.2+Math.sin(t*2.8)*.6;this.riftAura.material.opacity=.12+(Math.sin(t*2.8)+1)*.06;
+    if(t>=this.nextCode){this.nextCode=t+.14;this.crewActors.forEach(actor=>actor.display?.update(t,actor.status));this.meetingDisplay.update(t,this.meetingStatus);}
+    if (t >= this.nextLed) {
+      this.nextLed = t + .4;
+      this.metrics.led++;
+      for (const led of this.leds) {
+        const roll = Math.random();
+        const color = roll < .78 ? '#4fd16b' : roll < .9 ? '#4fb3ff' : this.peaceful ? '#4fd1c5' : roll < .97 ? '#f5c542' : '#ff8a86';
+        led.material.color.set(color);
+        led.material.emissive.set(color);
+        led.material.emissiveIntensity = Math.random() > .12 ? 1.4 : .15;
+      }
+    }
+    if(t>=this.nextMeeting){this.nextMeeting=t+random(6,9);this.bubble(this.meeting,this.meetingStatus);this.onLog(`회의실 · ${this.meetingStatus}`);}
+    if (this.riftCore) {
+      this.riftCore.material.emissiveIntensity=1.2+Math.sin(t*2.8)*.6;
+      this.riftAura.material.opacity=.12+(Math.sin(t*2.8)+1)*.06;
+    }
     const jump=(this.pet.jumpUntil??0)>t?Math.abs(Math.sin(((this.pet.jumpUntil-t)/.85)*Math.PI*2))*1.6:Math.max(0,Math.sin(t*3.2))*.3;this.pet.root.position.y=jump;
     for(const actor of this.monsters){
       if(actor!==this.battle?.actor){if(actor.kind==='ghost')actor.root.position.y=actor.home.y+Math.sin(t*2+actor.home.z)*.18;if(actor.kind==='dragon')actor.wings.forEach((w,i)=>w.rotation.z=Math.sin(t*2)*.06*(i?1:-1));}
@@ -365,7 +425,7 @@ export class OfficeScene {
     if(!this.battle&&this.monsters.length&&t>=this.nextBattle)this.startBattle();
     if(this.battle)this.updateBattle();
     this.bubbles.forEach(b=>{if(!b.fixed&&t>b.until)b.el.hidden=true;});
-    if(t-this.lastCalendar>30){this.lastCalendar=t;this.boardLabel.textContent=`v${PRODUCT.next} · ${dDay()}`;window.dispatchEvent(new Event('office:calendar'));}
+    if(t-this.lastCalendar>30){this.lastCalendar=t;this.boardLabel.textContent=this.boardTitle();window.dispatchEvent(new Event('office:calendar'));}
   }
   walk(actor,dt){
     if(actor.wait>0){actor.wait-=dt;actor.setAction('idle');return;}
@@ -455,6 +515,7 @@ export class OfficeScene {
     this.renderer.setRenderTarget(null);this.renderer.setClearColor(0x18152e,0);this.renderer.clear();this.renderer.render(this.blitScene,this.blitCamera);this.updateOverlays();this.frameCount++;
   }
   snapshot(){
-    return {ready:this.ready,view:{zoom:this.zoom,pan:this.viewPan.toArray()},elapsed:this.elapsed,frames:this.frameCount,reduced:this.reduced,hidden:document.hidden,metrics:{...this.metrics},issues:this.monsters.map(a=>({id:a.issue.id,grade:a.issue.grade,kind:a.kind,height:a.height,scale:a.root.scale.toArray(),position:a.root.position.toArray(),screen:this.project(a.root,a.height*.45)})),crew:this.crewActors.map(a=>({key:a.key,status:a.status,model:a.filename,behavior:a.data.behavior,calling:a.calling,soundWaves:a.waves?.visible,position:a.root.position.toArray(),screen:this.project(a.root,2)})),hero:this.project(this.hero.root,3),pet:this.project(this.pet.root,2),rack:this.project(this.actors.find(a=>a.kind==='rack').root,4),assets:this.assets,target:{width:this.renderTarget.width,height:this.renderTarget.height},viewport:{width:this.width,height:this.height},drawCalls:this.sceneDrawCalls,walkObstacles:this.obstacles.map(({name,object})=>{const b=new THREE.Box3().setFromObject(object);return {name,min:b.min.toArray(),max:b.max.toArray()};})};
+    const graves = this.graves.map(({record,root}) => ({id:record.issue.id,version:record.version,screen:this.project(new THREE.Vector3().setFromMatrixPosition(root.matrixWorld).add(new THREE.Vector3(0,1.45,-1.25)))}));
+    return {ready:this.ready,peaceful:this.peaceful,riftOpen:!!this.riftCore,graves,view:{zoom:this.zoom,pan:this.viewPan.toArray()},elapsed:this.elapsed,frames:this.frameCount,reduced:this.reduced,hidden:document.hidden,metrics:{...this.metrics},issues:this.monsters.map(a=>({id:a.issue.id,grade:a.issue.grade,kind:a.kind,height:a.height,scale:a.root.scale.toArray(),position:a.root.position.toArray(),screen:this.project(a.root,a.height*.45)})),crew:this.crewActors.map(a=>({key:a.key,status:a.status,model:a.filename,behavior:a.data.behavior,calling:a.calling,soundWaves:a.waves?.visible,position:a.root.position.toArray(),screen:this.project(a.root,2)})),hero:this.project(this.hero.root,3),pet:this.project(this.pet.root,2),rack:this.project(this.actors.find(a=>a.kind==='rack').root,4),assets:this.assets,target:{width:this.renderTarget.width,height:this.renderTarget.height},viewport:{width:this.width,height:this.height},drawCalls:this.sceneDrawCalls,walkObstacles:this.obstacles.map(({name,object})=>{const b=new THREE.Box3().setFromObject(object);return {name,min:b.min.toArray(),max:b.max.toArray()};})};
   }
 }

@@ -9,9 +9,10 @@ const clothingTextures = new Map();
 export const CHARACTER_FILES = ['character-male-a', 'character-female-a', 'character-male-c', 'character-female-d', 'character-male-f', 'character-female-b', 'character-female-e'];
 const FURNITURE = ['desk','chairDesk','computerScreen','computerKeyboard','computerMouse','bookcaseOpen','books','kitchenCoffeeMachine','kitchenCabinet','plantSmall1','pottedPlant','table','chairCushion','laptop','rugRectangle'];
 const DUNGEON = ['character-human','character-orc','weapon-sword','shield-rectangle','barrel','rocks'];
+const GRAVEYARD = ['character-ghost', 'grave-border', 'gravestone-round'];
 export async function loadAssets() {
   const missing=[];const manager=new THREE.LoadingManager();manager.onError=url=>missing.push(url);const loader = new GLTFLoader(manager);
-  const entries = [...CHARACTER_FILES.map(n => ['mini-characters',n]),...FURNITURE.map(n => ['furniture-kit',n]),...DUNGEON.map(n => ['mini-dungeon',n]),['graveyard-kit','character-ghost']];
+  const entries = [...CHARACTER_FILES.map(n => ['mini-characters',n]),...FURNITURE.map(n => ['furniture-kit',n]),...DUNGEON.map(n => ['mini-dungeon',n]),...GRAVEYARD.map(n => ['graveyard-kit',n])];
   await Promise.all(entries.map(async ([pack,name]) => {
     const gltf = await loader.loadAsync(new URL(`../assets/kenney/${pack}/${name}.glb`, import.meta.url).href);
     gltf.scene.traverse(node => {

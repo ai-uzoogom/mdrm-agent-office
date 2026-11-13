@@ -18,3 +18,32 @@
 #office-canvas.is-pointing{cursor:pointer}
 #office-canvas.is-zoomed{touch-action:none}
 #office-canvas.is-dragging{cursor:grabbing}
+
+.peaceful-label { color: var(--teal); border-color: var(--teal); }
+.grave-inscription {
+  color: #20263c;
+  font: 700 7px/1.15 var(--font-ko);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  overflow: hidden;
+}
+#server-state { font: 700 11px/1.3 var(--font-ko); }
+.history-heading { margin: 0 0 20px; font-size: 17px; }
+.issue-cards { padding: 0; list-style: none; }
+.issue-card[id]:focus { outline: 2px solid var(--gold); outline-offset: 2px; }
+.patch-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+  width: 100%;
+  padding: 6px 9px;
+  color: var(--cream);
+  background: var(--win-deep);
+  border: 1px solid var(--border-soft);
+  text-align: left;
+  font-size: 12px;
+}
+.patch-link:hover { border-color: var(--teal); }
+.patch-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }

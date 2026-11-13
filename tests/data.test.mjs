@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { kstDate,dDay,particle,activeIssues,resolvedIds,releaseIssues,ISSUES,RELEASES,GRADES,validateData } from '../src/data.js';
+import { kstDate,dDay,particle,activeIssues,resolvedIds,releaseIssues,patchRecords,ISSUES,RELEASES,GRADES,validateData } from '../src/data.js';
 
 test('KST day changes at 15:00 UTC independently of browser timezone',()=>{
  assert.equal(kstDate(new Date('2026-10-30T14:59:59Z')),'2026-10-30');
@@ -19,11 +19,21 @@ test('Korean particles use batchim, including grade-form subjects',()=>{
  assert.equal(particle('Java 인증서 오거','을/를'),'Java 인증서 오거를');
  assert.equal(particle('MDRM'),'MDRM이');
 });
-test('released issues disappear from active scene data without mutation',()=>{
- const releases=RELEASES.map((r,i)=>i===0?{...r,state:'released'}:{...r});
- assert.equal(activeIssues(ISSUES,releases).length,0);
- assert.equal(resolvedIds(releases).size,3);
- assert.equal(activeIssues().length,3);
+test('the published patch resolves all three issues and keeps their version and date',()=>{
+ assert.equal(activeIssues().length,0);
+ assert.equal(resolvedIds().size,3);
+ assert.deepEqual(patchRecords().map(r=>[r.issue.id,r.version,r.date]),[
+  ['php2shell','4.7.4','2026-11-13'],
+  ['javacert','4.7.4','2026-11-13'],
+  ['nginx','4.7.4','2026-11-13'],
+ ]);
+});
+test('repeated release references produce one grave with the latest patch date',()=>{
+ const releases=[
+  {ver:'1',state:'released',date:'2026-10-01',ids:['php2shell']},
+  {ver:'2',state:'released',date:'2026-11-01',ids:['php2shell']},
+ ];
+ assert.deepEqual(patchRecords(ISSUES,releases).map(r=>r.version),['2']);
 });
 test('partial releases resolve only explicitly listed issues',()=>{
  const releases=[{state:'released',ids:['php2shell']}];
@@ -31,9 +41,9 @@ test('partial releases resolve only explicitly listed issues',()=>{
 });
 test('adding an issue automatically updates planned/current history; released history stays scoped',()=>{
  const added=[...ISSUES,{id:'test',name:'테스트 이슈',grade:'low'}];
- assert.equal(activeIssues(added).length,4);
- assert.equal(releaseIssues(RELEASES[0],added).length,4);
- assert.equal(releaseIssues(RELEASES[1],added).length,4);
+ assert.deepEqual(activeIssues(added).map(i=>i.id),['test']);
+ assert.equal(releaseIssues({...RELEASES[0],state:'planned'},added).length,4);
+ assert.equal(releaseIssues({...RELEASES[1],state:'current'},added).length,4);
  assert.equal(releaseIssues({...RELEASES[0],state:'released'},added).length,3);
 });
 test('content is valid and every configured grade has a form and color',()=>{

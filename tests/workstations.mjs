@@ -9,7 +9,10 @@ try{
  const data=await page.evaluate(()=>window.__WORKSTATION_REVIEW__);
  const report={chairFacing:data.chairFacing,kneeSpace:data.kneeSpace,bodies:data.samples[0].map((_,actor)=>({actor,torso:data.samples[0][actor].torso,desk:data.samples[0][actor].desk})),hands:data.samples[0].map((_,actor)=>['left','right'].map((side,hand)=>{
   const frames=data.samples.map(s=>s[actor].hands[hand]),positions=frames.map(f=>f.position),keyboard=data.samples[0][actor].keyboard;
-  return {actor,side,minClearance:Math.min(...frames.map(f=>f.minimum[1]-keyboard.max.y)),motion:Math.max(...positions.map(p=>Math.hypot(...p.map((v,i)=>v-positions[0][i])))),range:[0,1,2].map(axis=>[Math.min(...positions.map(p=>p[axis])),Math.max(...positions.map(p=>p[axis]))])};
+  const motion = Math.max(...positions.flatMap((a, index) =>
+   positions.slice(index + 1).map(b => Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]))
+  ));
+  return {actor,side,minClearance:Math.min(...frames.map(f=>f.minimum[1]-keyboard.max.y)),motion,range:[0,1,2].map(axis=>[Math.min(...positions.map(p=>p[axis])),Math.max(...positions.map(p=>p[axis]))])};
  })).flat(),displays:data.displays,errors};
  await mkdir('test-results',{recursive:true});await page.screenshot({path:'test-results/workstations.png',fullPage:true});await page.locator('article').last().screenshot({path:'test-results/meeting-chairs.png'});await writeFile('test-results/workstations-report.json',JSON.stringify(report,null,2));
  assert.deepEqual(errors,[]);
@@ -24,7 +27,7 @@ try{
  assert.equal(report.displays.length,5);
  for(const display of report.displays){assert.ok(display.changedPixels>150,'display animation is visually static');for(const point of display.contact){assert.ok(point&&point.gap<.005,'display floats away from its native LCD');assert.ok(point.alignment>.9999,'display does not follow the native LCD tilt');}}
  await page.setViewportSize({width:390,height:844});await page.goto(process.env.OFFICE_URL||'http://127.0.0.1:4173/');await page.waitForFunction(()=>window.__OFFICE_DEBUG__?.snapshot().ready);
- for(const selector of ['.name-label','.wall-label','.monster-label','.board-label'])assert.notEqual(await page.locator(selector).first().evaluate(e=>getComputedStyle(e).display),'none');
+ for(const selector of ['.name-label','.wall-label','.grave-inscription','.board-label'])assert.notEqual(await page.locator(selector).first().evaluate(e=>getComputedStyle(e).display),'none');
  for(let i=0;i<5;i++)await page.locator('#office-canvas').press('+');
  assert.equal((await page.evaluate(()=>window.__OFFICE_DEBUG__.snapshot())).view.zoom,2.25);const detail=await page.evaluate(()=>window.__OFFICE_DEBUG__.snapshot());assert.ok(detail.target.width>=1580,'mobile zoom resolution stayed low');await page.locator('#scene-stage').screenshot({path:'test-results/workstations-mobile-225.png'});
  assert.deepEqual(errors,[]);

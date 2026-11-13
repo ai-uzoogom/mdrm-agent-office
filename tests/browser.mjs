@@ -25,7 +25,7 @@ const snapshot=page=>page.evaluate(()=>window.__OFFICE_DEBUG__.snapshot());
 const noOverflow=async page=>assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'horizontal overflow');
 const screenshot=async(page,name,fullPage=true)=>page.screenshot({path:`test-results/${name}.png`,fullPage});
 async function checkSurfaceLabels(page){
- const labels=await page.locator('.surface-label').evaluateAll(nodes=>nodes.map(el=>{
+ const labels=await page.locator('.wall-label, .board-label').evaluateAll(nodes=>nodes.map(el=>{
   const style=getComputedStyle(el),matrix=new DOMMatrixReadOnly(style.transform);
   return {text:el.textContent,visible:style.display!=='none',angle:Math.atan2(matrix.b,matrix.a)*180/Math.PI,verticalTilt:matrix.c};
  }));
@@ -45,13 +45,17 @@ async function checkSurfaceLabels(page){
  assert.deepEqual(overlaps,[],'speech bubbles cover the whiteboard heading');
 }
 try{
- const {context,page}=await openPage();
+ const source=await readFile('src/data.js','utf8');
+ const plannedSource=source.replace("current: '4.7.4'","current: '4.7.3'")
+  .replace("ver: '4.7.4', state: 'released'","ver: '4.7.4', state: 'planned'")
+  .replace("ver: '4.7.3', state: 'archived'","ver: '4.7.3', state: 'current'");
+ const {context,page}=await openPage({source:plannedSource});
  await noOverflow(page);
  assert.equal(await page.locator('#today-kst').getAttribute('datetime'),kstDate());
  assert.equal(await page.locator('.agent-row').count(),CREW.length);
  assert.equal(await page.locator('.monster-row').count(),3);
  assert.equal(await page.locator('[role="tab"]').count(),4);
- assert.equal((await snapshot(page)).assets.files,29);
+ assert.equal((await snapshot(page)).assets.files,31);
  assert.equal((await snapshot(page)).crew.find(a=>a.behavior==='encourage').model,'character-female-e');
  assert.equal(await page.locator('.crew-card').count(),7);
  assert.ok(await page.getByRole('button',{name:'일정 독려 상태 보기'}).isVisible());
@@ -133,16 +137,61 @@ try{
  const fixedA=await snapshot(reduced.page);await reduced.page.waitForTimeout(1200);const fixedB=await snapshot(reduced.page);
  assert.equal(fixedB.elapsed,0);assert.equal(fixedA.frames,fixedB.frames);assert.equal(fixedB.metrics.combat,0);assert.ok(await reduced.page.locator('.bubble:not([hidden])').count()>0);
  await screenshot(reduced.page,'mobile-reduced');record('initial reduced-motion preference: static frame, fixed bubbles, no combat');await reduced.context.close();
- const source=await readFile('src/data.js','utf8');
- const added=await openPage({reduced:'reduce',source:source.replace('export const ISSUES = [',"export const ISSUES = [\n  { id:'qa-low', name:'추가 이슈', grade:'low' },")});
- assert.equal((await snapshot(added.page)).issues.length,4);assert.equal((await snapshot(added.page)).issues.find(i=>i.id==='qa-low').kind,'ghost');assert.ok((await snapshot(added.page)).issues.find(i=>i.id==='qa-low').height<(await snapshot(added.page)).issues.find(i=>i.id==='nginx').height);assert.equal(await added.page.locator('.monster-row').count(),4);assert.equal(await added.page.locator('.issue-card[data-issue="qa-low"]').count(),2);assert.ok((await added.page.locator('[data-grade="low"]').textContent()).includes('추가 이슈'));assert.ok((await added.page.locator('#issue-count').textContent()).includes('4건'));assert.ok((await added.page.locator('.timeline-summary').first().textContent()).includes('4건'));
+ const added=await openPage({reduced:'reduce',source:plannedSource.replace('export const ISSUES = [',"export const ISSUES = [\n  { id:'qa-low', name:'추가 이슈', grade:'low' },")});
+ assert.equal((await snapshot(added.page)).issues.length,4);assert.equal((await snapshot(added.page)).issues.find(i=>i.id==='qa-low').kind,'ghost');assert.ok((await snapshot(added.page)).issues.find(i=>i.id==='qa-low').height<(await snapshot(added.page)).issues.find(i=>i.id==='nginx').height);assert.equal(await added.page.locator('.monster-row').count(),4);assert.equal(await added.page.locator('.issue-card[data-issue="qa-low"]').count(),2);assert.ok((await added.page.locator('[data-grade="low"]').textContent()).includes('추가 이슈'));assert.ok((await added.page.locator('#issue-count').textContent()).includes('4마리'));assert.ok((await added.page.locator('.timeline-summary').first().textContent()).includes('4건'));
  record('ISSUES addition updates scene, sidebar, both timelines, bestiary and count');await added.context.close();
- const changed=await openPage({reduced:'reduce',source:source.replace("id: 'nginx', name: 'nginx', grade: 'medium'","id: 'nginx', name: 'nginx', grade: 'critical'")});
+ const changed=await openPage({reduced:'reduce',source:plannedSource.replace("id: 'nginx', name: 'nginx', grade: 'medium'","id: 'nginx', name: 'nginx', grade: 'critical'")});
  assert.equal((await snapshot(changed.page)).issues.find(i=>i.id==='nginx').grade,'critical');assert.ok((await changed.page.locator('[data-inspect="issue-nginx"]').textContent()).includes('드래곤'));assert.ok((await changed.page.locator('[data-grade="critical"]').textContent()).includes('nginx'));assert.equal(await changed.page.locator('.issue-card[data-issue="nginx"] h4').first().textContent(),'nginx 드래곤');
  record('grade change propagates to monster form and all information panels');await changed.context.close();
- const released=await openPage({reduced:'reduce',source:source.replace("ver: '4.7.4', state: 'planned'","ver: '4.7.4', state: 'released'")});
- assert.equal((await snapshot(released.page)).issues.length,0);assert.equal(await released.page.locator('.monster-row.resolved').count(),3);assert.equal(await released.page.locator('.issue-card.resolved').count(),6);assert.ok((await released.page.locator('#issue-count').textContent()).includes('0건'));assert.equal(await released.page.locator('.monster-label').count(),0);assert.ok((await released.page.locator('#release-schedule').textContent()).includes('발행 완료'));
- record('released state removes monsters and grays completed issues');await released.context.close();
+ const released=await openPage();
+ const peace=await snapshot(released.page);
+ assert.equal(peace.peaceful,true);
+ assert.equal(peace.riftOpen,false);
+ assert.equal(peace.issues.length,0);
+ assert.deepEqual(peace.graves.map(g=>g.id),['php2shell','javacert','nginx']);
+ assert.ok(peace.graves.every(g=>g.version==='4.7.4'));
+ assert.equal(await released.page.locator('.monster-row, .monster-label').count(),0);
+ assert.equal(await released.page.locator('.grave-inscription').count(),3);
+ assert.match(await released.page.locator('#version-current').textContent(),/4\.7\.4/);
+ assert.match(await released.page.locator('#release-schedule').textContent(),/2026-11-13/);
+ assert.match(await released.page.locator('#release-badge').textContent(),/발행 완료/);
+ assert.match(await released.page.locator('#issue-count').textContent(),/0마리/);
+ assert.equal(await released.page.locator('.timeline-entry.released .issue-cards li').count(),3);
+ await released.page.waitForTimeout(5000);
+ const later=await snapshot(released.page);
+ assert.ok(later.metrics.walk>0&&later.metrics.typing>0);
+ for(const key of ['combat','melee','breath'])assert.equal(later.metrics[key],0);
+ await screenshot(released.page,'peace-desktop');
+ const canvas=await released.page.locator('#office-canvas').boundingBox();
+ for(const grave of later.graves){
+  await released.page.mouse.click(canvas.x+grave.screen.x,canvas.y+grave.screen.y);
+  assert.equal(await released.page.evaluate(()=>document.activeElement.id),`patch-${grave.id}`);
+  await released.page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
+ }
+ await released.page.locator('[data-open-patches]').focus();
+ await released.page.keyboard.press('Enter');
+ assert.equal(await released.page.evaluate(()=>document.activeElement.id),'patch-php2shell');
+ await released.page.locator('#panel-history').screenshot({path:'test-results/patch-history.png'});
+ for(const width of [375,390,844]){
+  await released.page.setViewportSize({width,height:width===844?390:844});
+  await noOverflow(released.page);
+  assert.equal(await released.page.locator('.timeline-entry.released .issue-cards li').count(),3);
+  assert.ok(await released.page.locator('[data-open-patches]').evaluate(el=>el.getBoundingClientRect().height>=44));
+ }
+ await released.page.setViewportSize({width:390,height:844});
+ await released.page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
+ await screenshot(released.page,'peace-mobile');
+ await released.context.close();
+ record('published version stays peaceful and three grave clicks and keyboard link open patch records');
+ const partial=await openPage({reduced:'reduce',source:source.replace("date: '2026-11-13', ids: ['php2shell', 'javacert', 'nginx']","date: '2026-11-13', ids: ['php2shell', 'javacert']")});
+ const mixed=await snapshot(partial.page);
+ assert.equal(mixed.peaceful,false);
+ assert.equal(mixed.riftOpen,true);
+ assert.deepEqual(mixed.issues.map(i=>i.id),['nginx']);
+ assert.deepEqual(mixed.graves.map(g=>g.id),['php2shell','javacert']);
+ assert.equal(await partial.page.locator('.timeline-entry.released .issue-cards li').count(),2);
+ await partial.context.close();
+ record('partial patch preserves unpatched monster and creates graves only for published IDs');
  assert.deepEqual(errors,[]);record('zero console errors, page errors and HTTP errors in all scenarios');
  await writeFile('test-results/browser-report.json',JSON.stringify({date:new Date().toISOString(),url:base,browser:browser.version(),checks,errors},null,2));
 }catch(error){

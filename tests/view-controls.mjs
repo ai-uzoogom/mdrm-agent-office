@@ -46,7 +46,7 @@ try{
 
  let bounds=await canvas.boundingBox();
  await page.mouse.click(bounds.x+enlarged.hero.x,bounds.y+enlarged.hero.y);
- assert.match(await page.locator('#activity-log li').first().textContent(),/방어선은 내가 지킨다/);
+ assert.match(await page.locator('#activity-log li').first().textContent(),/전투 끝|방어선은 내가 지킨다/);
  const logBefore=await page.locator('#activity-log').textContent();
  await page.mouse.move(bounds.x+enlarged.hero.x,bounds.y+enlarged.hero.y);await page.mouse.down();
  await page.mouse.move(bounds.x+enlarged.hero.x+64,bounds.y+enlarged.hero.y-30,{steps:8});await page.mouse.up();

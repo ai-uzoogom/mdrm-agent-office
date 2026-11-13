@@ -33,7 +33,7 @@
     </header>
 
     <section class="release-bar rpg-window" aria-label="MDRM 릴리스 현황">
-      <div class="release-main"><svg class="icon release-icon" aria-hidden="true"><use href="#i-shield"/></svg><div><span class="micro-label">THE NEXT CHAPTER</span><div class="version-line"><strong id="version-current"></strong><span class="version-arrow" aria-hidden="true">▸</span><strong id="version-next"></strong></div></div><span class="dday-chip" data-dday></span><span class="schedule-chip" id="release-schedule"></span></div>
+      <div class="release-main"><svg class="icon release-icon" aria-hidden="true"><use href="#i-shield"/></svg><div><span class="micro-label">MDRM 릴리스</span><div class="version-line"><strong id="version-current"></strong><span class="version-arrow" aria-hidden="true">▸</span><strong id="version-next"></strong></div></div><span class="dday-chip" id="release-badge"></span><span class="schedule-chip" id="release-schedule"></span></div>
       <div class="release-meta"><strong><i class="status-dot"></i> <span id="issue-count"></span></strong><time id="today-kst"></time></div>
     </section>
 
@@ -52,7 +52,7 @@
         </section>
         <aside class="side-panels" aria-label="오피스 실시간 상태">
           <section class="side-panel rpg-window" aria-labelledby="agents-heading"><div class="panel-heading"><h2 id="agents-heading"><svg class="icon" aria-hidden="true"><use href="#i-crew"/></svg> 에이전트</h2><span class="panel-count" id="crew-count"></span></div><div class="agent-list" id="agent-list"></div></section>
-          <section class="side-panel rpg-window" aria-labelledby="defense-heading"><div class="panel-heading"><h2 id="defense-heading"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg> 서버실 방어</h2><span class="tiny-tag">ALL CLEAR</span></div><div id="defense-list"></div></section>
+          <section class="side-panel rpg-window" aria-labelledby="defense-heading"><div class="panel-heading"><h2 id="defense-heading"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg> 서버실</h2><span class="tiny-tag" id="server-state"></span></div><div id="defense-list"></div></section>
           <section class="side-panel log-panel rpg-window" aria-labelledby="log-heading"><div class="panel-heading"><h2 id="log-heading"><svg class="icon" aria-hidden="true"><use href="#i-log"/></svg> 활동 로그</h2><span class="simulation-tag">연출</span></div><ol id="activity-log" aria-label="최근 활동 7개" aria-live="polite" aria-relevant="additions"></ol></section>
         </aside>
       </div>
