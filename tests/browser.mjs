@@ -66,7 +66,11 @@ try{
  assert.equal(await page.locator('[data-grade="low"] h3').textContent(),'꼬마 유령');
  assert.equal(await page.locator('[data-grade="medium"] h3').textContent(),'유령');
  assert.ok(await page.locator('[data-thumbnail]').evaluateAll((images,size)=>images.every(i=>i.complete&&i.naturalWidth===size&&i.naturalHeight===size),RENDERING.thumbnailSize));
- assert.equal((await snapshot(page)).target.width,2628);
+ const renderSize=await snapshot(page);
+ assert.ok(renderSize.target.width>=renderSize.viewport.width*2,'scene lost high-density detail');
+ assert.ok(renderSize.target.width<=RENDERING.maxSceneWidth&&renderSize.target.width*renderSize.target.height<=RENDERING.maxScenePixels+5000,'render budget exceeded');
+ const sidebar=await page.locator('.side-panels').evaluate(el=>({height:el.clientHeight,content:el.scrollHeight}));
+ assert.ok(sidebar.content<=sidebar.height+1,`defense sidebar overflows: ${JSON.stringify(sidebar)}`);
  assert.equal(await page.locator('#office-canvas').evaluate(canvas=>canvas.width),(await snapshot(page)).target.width);
  await checkSurfaceLabels(page);
  await screenshot(page,'desktop');
@@ -102,7 +106,7 @@ try{
  assert.equal((await snapshot(page)).frames,frozen.frames);
  record('live reduced-motion change freezes animation and simulation');
  const canvasRect=await page.locator('#office-canvas').boundingBox();
- for(const [key,expected] of [['hero','방어선은 내가 지킨다'],['pet','삐빅!'],['rack','모든 서비스 정상 동작 중']]){
+ for(const [key,expected] of [['hero','방어선은 내가 지킨다'],['pet','삐빅'],['rack','모든 서비스 정상 동작 중']]){
   const point=(await snapshot(page))[key];await page.mouse.click(canvasRect.x+point.x,canvasRect.y+point.y);await page.waitForTimeout(40);
   assert.ok((await page.locator('#activity-log li').first().textContent()).includes(expected),`raycast ${key}`);
  }
@@ -164,8 +168,9 @@ try{
  await screenshot(released.page,'peace-desktop');
  await released.page.locator('button[data-floor="basement"]').click();
  await released.page.waitForFunction(()=>!window.__OFFICE_DEBUG__.snapshot().transitioning);
- const canvas=await released.page.locator('#office-canvas').boundingBox();
  for(const grave of (await snapshot(released.page)).graves){
+  await released.page.locator('#office-canvas').scrollIntoViewIfNeeded();
+  const canvas=await released.page.locator('#office-canvas').boundingBox();
   await released.page.mouse.click(canvas.x+grave.screen.x,canvas.y+grave.screen.y);
   assert.equal(await released.page.evaluate(()=>document.activeElement.id),`patch-${grave.id}`);
   await released.page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));

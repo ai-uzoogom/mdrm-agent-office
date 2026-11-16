@@ -20,6 +20,7 @@ function updateCalendar(){
 }
 function renderUI(){
  validateData();
+ $('.office-layout').style.setProperty('--monster-count',active.length);
  $('#version-current').textContent = `${PRODUCT.name} v${PRODUCT.current}`;
  $('#version-next').textContent = NEXT_RELEASE ? `v${NEXT_RELEASE.ver}` : '';
  $('.version-arrow').hidden = !NEXT_RELEASE;
@@ -34,7 +35,7 @@ function renderUI(){
  if (peaceful) {
   $('#office-canvas').setAttribute('aria-label', '아이소메트릭 MDRM 오피스. 서버실 균열이 봉인되고 용사와 AGENT가 휴식합니다. 지하층 퇴치 묘역에 패치된 몬스터가 기록되어 있습니다.');
  }
- $('#crew-count').textContent=String(CREW.length).padStart(2,'0');
+ $('#crew-count').textContent=String(CREW.length);
  $('#agent-list').innerHTML=CREW.map((p,i)=>`<button class="agent-row" type="button" data-inspect="crew-${i}" aria-label="${esc(p.role)} 상태 보기"><span class="crew-dot" style="--crew-color:${p.shirt}"></span><span>${esc(p.role)}</span><span class="agent-status" id="crew-status-${i}">${esc(p.statuses?.[0]??p.stops[0])}</span></button>`).join('');
  const monsters = active.map(issue => {
   const version = targetVersion(issue);
@@ -50,7 +51,7 @@ function renderUI(){
    <span class="defender-status">${peaceful ? '대기 중' : '순찰 중'}</span>
   </button>
   <div class="monster-list">
-   ${monsters || '<p class="empty-note">현재 출현 중인 몬스터가 없습니다.</p>'}
+   ${monsters || '<p class="empty-note">현재 출현한 몬스터 없음</p>'}
    ${patches.length ? `<button type="button" class="patch-link" data-open-patches>퇴치 묘역 · 패치 기록 ${patches.length}건 <span aria-hidden="true">›</span></button>` : ''}
   </div>`;
  $('#panel-history').innerHTML = '<h2 class="history-heading">릴리스 이력 및 패치 기록</h2>' + `<ol class="timeline">${RELEASES.map(release => {
@@ -75,9 +76,9 @@ function renderUI(){
    ${items ? `<ul class="issue-cards" aria-label="v${esc(release.ver)} ${summary}">${items}</ul>` : '<p class="empty-note">등록된 이슈가 없습니다.</p>'}
   </li>`;
  }).join('')}</ol>`;
- $('#panel-bestiary').innerHTML=intro('알아두면 덜 무서운 몬스터','보안 이슈를 네 가지 모습으로 만나요.')+`<div class="card-grid">${Object.entries(GRADES).map(([key,g])=>`<article class="bestiary-card" data-grade="${key}" style="--grade-color:${g.color}">${img(key,'thumb',g.form)}<p class="grade-code">${g.en}</p><h3>${g.form}</h3>${badge(key)}<p>${active.filter(i=>i.grade===key).map(i=>esc(i.name)).join(' · ')||'현재 출현 없음'}</p></article>`).join('')}</div>`;
- $('#panel-crew').innerHTML=intro('오늘의 오피스 메이커스','각자의 자리에서, 같은 릴리스를 향해.')+`<div class="crew-grid">${CREW.map((p,i)=>`<article class="crew-card">${img(`crew-${i}`,'thumb',p.role+' 캐릭터')}<div><h3><span class="crew-dot" style="--crew-color:${p.shirt}"></span>${esc(p.role)}</h3><p>${i===4?'회의실':'개발실'} · ${p.walker?'이동 근무':'개발 워크스테이션'}</p></div></article>`).join('')}</div>`;
- $('#panel-party').innerHTML=intro('우리의 든든한 용사단','서버실의 평범한 하루를 지키는 특별한 동료들.')+`<div class="party-grid"><article class="party-card">${img('hero','thumb','파란 갑옷과 은색 투구의 MDRM 용사')}<div><h3>MDRM</h3><p class="party-role">용사 · 서버실</p><p>IT 운영 자동화와 재해복구(DR)를 맡은 Mantech의 제품. 현재 운영 버전은 v${PRODUCT.current}입니다.</p></div></article><article class="party-card">${img('pet','thumb','청록색 로봇 AGENT')}<div><h3>AGENT</h3><p class="party-role">펫 · MDRM의 동료</p><p>작은 안테나로 변화를 감지하고, 언제나 용사의 곁을 지켜요. “삐빅! 함께라면 문제없어!”</p></div></article></div>`;
+ $('#panel-bestiary').innerHTML=intro('몬스터 도감','보안 이슈 등급에 따른 네 가지 모습')+`<div class="card-grid">${Object.entries(GRADES).map(([key,g])=>`<article class="bestiary-card" data-grade="${key}" style="--grade-color:${g.color}">${img(key,'thumb',g.form)}<p class="grade-code">${g.en[0]+g.en.slice(1).toLowerCase()}</p><h3>${g.form}</h3>${badge(key)}<p>${active.filter(i=>i.grade===key).map(i=>esc(i.name)).join(' · ')||'현재 출현 없음'}</p></article>`).join('')}</div>`;
+ $('#panel-crew').innerHTML=intro('오피스 개발진','패치부터 검수, 릴리스까지 각자의 역할')+`<div class="crew-grid">${CREW.map((p,i)=>`<article class="crew-card">${img(`crew-${i}`,'thumb',p.role+' 캐릭터')}<div><h3><span class="crew-dot" style="--crew-color:${p.shirt}"></span>${esc(p.role)}</h3><p>${i===4?'회의실':'개발실'} · ${p.walker?'이동 근무':'개발 워크스테이션'}</p></div></article>`).join('')}</div>`;
+ $('#panel-party').innerHTML=intro('서버실의 용사단','MDRM 용사와 AGENT의 역할')+`<div class="party-grid"><article class="party-card">${img('hero','thumb','파란 갑옷과 은색 투구의 MDRM 용사')}<div><h3>MDRM</h3><p class="party-role">용사 · 서버실</p><p>IT 운영 자동화와 재해복구(DR)를 맡은 Mantech의 제품. 현재 운영 버전은 v${PRODUCT.current}입니다.</p></div></article><article class="party-card">${img('pet','thumb','청록색 로봇 AGENT')}<div><h3>AGENT</h3><p class="party-role">펫 · MDRM의 동료</p><p>작은 안테나로 변화를 감지하고, 언제나 용사의 곁을 지켜요. “삐빅, 함께라면 문제없어”</p></div></article></div>`;
  $('#footer-note').textContent=`정보 기준일 ${AS_OF_DATE}. 몬스터 등급, 개발진 역할, 활동 로그와 전투는 연출용 설정입니다.`;
  updateCalendar();
 }

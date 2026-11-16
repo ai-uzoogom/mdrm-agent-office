@@ -27,9 +27,9 @@
   <a class="skip-link" href="#story-tabs">릴리스 정보로 건너뛰기</a>
   <div class="page-shell">
     <header class="page-header">
-      <div class="brand-row"><span class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg> MANTECH <span class="divider">/</span> MDRM RELEASE STORY</span><span class="office-open"><i class="status-dot"></i> OFFICE IS OPEN</span></div>
+      <div class="brand-row"><span class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg> Mantech <span class="divider">/</span> 릴리스 기록</span><span class="office-open"><i class="status-dot"></i> 작은 개발실</span></div>
       <h1><span>MDRM</span> AGENT OFFICE<span class="title-pixel" aria-hidden="true">.</span></h1>
-      <p>더 단단한 내일을 만드는 작은 오피스. <span>오늘도 에이전트들은 열일 중입니다.</span></p>
+      <p>MDRM의 릴리스와 패치 기록이 쌓이는 작은 오피스</p>
     </header>
 
     <section class="release-bar rpg-window" aria-label="MDRM 릴리스 현황">
@@ -40,20 +40,19 @@
     <main>
       <div class="office-layout">
         <section class="scene-panel rpg-window" aria-labelledby="office-heading">
-          <div class="scene-toolbar"><h2 id="office-heading"><span class="micro-label">01</span> THE OFFICE</h2><span class="scene-live" id="motion-state"><i class="status-dot"></i> 자율 업무 진행 중</span></div>
+          <div class="scene-toolbar"><h2 id="office-heading">오피스</h2><span class="scene-live" id="motion-state"><i class="status-dot"></i> 업무 연출 중</span></div>
           <div id="scene-stage" class="scene-stage" data-floor="office" aria-busy="true">
             <canvas id="office-canvas" role="img" tabindex="0" aria-describedby="scene-view-help" aria-label="아이소메트릭 MDRM 오피스. 개발실의 네 개발자와 세 직원이 릴리스를 준비하고, 일정 독려 담당이 확성기로 진행 상황을 확인합니다. 서버실에서 MDRM 용사와 AGENT가 보안 이슈 몬스터를 방어합니다."></canvas>
             <div id="scene-overlays" aria-hidden="true"></div>
             <p id="scene-view-help" class="sr-only">어두운 지하층이나 B1 버튼을 누르면 지하 묘역으로 이동합니다. 1F 버튼으로 돌아옵니다. PageDown과 PageUp 키로 층을 선택할 수 있습니다. 장면 위에서 마우스 휠을 위로 굴리면 확대, 아래로 굴리면 축소합니다. 클릭한 채 드래그하면 위치를 옮깁니다. 모바일은 두 손가락을 벌리거나 오므려 확대·축소하고 확대 후 한 손가락으로 이동합니다. 장면에 초점을 두면 +, −와 방향키를 사용할 수 있고 0 또는 Home으로 전체 보기에 복귀합니다.</p>
             <div id="scene-loading" class="scene-loading" role="status"><span class="loading-shield"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span><strong>오피스의 불을 켜는 중</strong><span>동료들이 곧 도착합니다…</span></div>
-            <div class="scene-coordinate" aria-hidden="true">MDRM HQ <span>37.5° N · 127.0° E</span></div>
           </div>
           <nav class="floor-navigation" aria-label="층 선택">
-            <button type="button" data-floor="office" aria-pressed="true">1F <span>오피스</span></button>
-            <button type="button" data-floor="basement" aria-pressed="false">B1 <span>퇴치 묘역</span> <span aria-hidden="true">↓</span></button>
+            <button type="button" data-floor="office" aria-pressed="true"><span class="floor-code">1F</span> <span>오피스</span></button>
+            <button type="button" data-floor="basement" aria-pressed="false"><span class="floor-code">B1</span> <span>퇴치 묘역</span> <span aria-hidden="true">↓</span></button>
             <span id="floor-status" class="sr-only" role="status">현재 1층 오피스</span>
           </nav>
-          <div class="scene-caption"><span><svg class="icon" aria-hidden="true"><use href="#i-cursor"/></svg> 휠·두 손가락 확대·축소 · 드래그 이동</span><span class="caption-tag">AUTO · IDLE</span></div>
+          <div class="scene-caption"><span><svg class="icon" aria-hidden="true"><use href="#i-cursor"/></svg> 휠·두 손가락 확대·축소 · 드래그 이동</span></div>
         </section>
         <aside class="side-panels" aria-label="오피스 실시간 상태">
           <section class="side-panel rpg-window" aria-labelledby="agents-heading"><div class="panel-heading"><h2 id="agents-heading"><svg class="icon" aria-hidden="true"><use href="#i-crew"/></svg> 에이전트</h2><span class="panel-count" id="crew-count"></span></div><div class="agent-list" id="agent-list"></div></section>
@@ -77,7 +76,7 @@
         </div>
       </section>
     </main>
-    <footer class="page-footer"><p id="footer-note"></p><a href="https://kenney.nl/assets" target="_blank" rel="noopener noreferrer">Assets: Kenney (CC0) <span aria-hidden="true">↗</span></a><span class="footer-brand">BUILT FOR A SAFER TOMORROW</span></footer>
+    <footer class="page-footer"><p id="footer-note"></p><a href="https://kenney.nl/assets" target="_blank" rel="noopener noreferrer">Assets: Kenney (CC0) <span aria-hidden="true">↗</span></a><span class="footer-brand">Mantech · MDRM</span></footer>
   </div>
   <noscript>이 오피스를 보려면 JavaScript를 활성화해 주세요.</noscript>
 </body>

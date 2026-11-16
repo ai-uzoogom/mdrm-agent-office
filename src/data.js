@@ -24,13 +24,13 @@ export const NEXT_RELEASE = RELEASES.find(r => r.state === 'planned');
 const peaceful = activeIssues().length === 0;
 // TODO: 개발진 역할, 이름, 상태 문구는 연출을 위한 임시 설정입니다.
 export const CREW = [
-  { role: 'php2shell 패치', shirt: '#4a7bf0', screen: '#4fd16b', statuses: peaceful ? ['패치 완료', '수정 기록 정리', '패치 검증 통과'] : ['타이핑…', '코드 리뷰', '테스트 중', '커밋!'] },
-  { role: 'nginx 패치', shirt: '#4fa86a', screen: '#4fb3ff', statuses: peaceful ? ['패치 완료', '설정 기록 정리', '패치 검증 통과'] : ['타이핑…', '설정 점검', '테스트 중', '커밋!'] },
-  { role: 'Java 인증서 패치', shirt: '#a468ff', screen: '#f5c542', statuses: peaceful ? ['패치 완료', '인증서 기록 정리', '패치 검증 통과'] : ['자료 조사', '타이핑…', '테스트 중', '커밋!'] },
-  { role: '빌드·검수', shirt: '#e5873a', screen: '#f6a050', statuses: peaceful ? ['빌드 통과', '릴리스 기록 정리', '발행 완료'] : ['빌드 중', '확인 필요!', '검수 중', '빌드 통과'] },
+  { role: 'php2shell 패치', shirt: '#4a7bf0', screen: '#4fd16b', statuses: peaceful ? ['패치 완료', '수정 기록 정리', '패치 검증 통과'] : ['타이핑…', '코드 리뷰', '테스트 중', '커밋 완료'] },
+  { role: 'nginx 패치', shirt: '#4fa86a', screen: '#4fb3ff', statuses: peaceful ? ['패치 완료', '설정 기록 정리', '패치 검증 통과'] : ['타이핑…', '설정 점검', '테스트 중', '커밋 완료'] },
+  { role: 'Java 인증서 패치', shirt: '#a468ff', screen: '#f5c542', statuses: peaceful ? ['패치 완료', '인증서 기록 정리', '패치 검증 통과'] : ['자료 조사', '타이핑…', '테스트 중', '커밋 완료'] },
+  { role: '빌드·검수', shirt: '#e5873a', screen: '#f6a050', statuses: peaceful ? ['빌드 통과', '릴리스 기록 정리', '발행 완료'] : ['빌드 중', '확인 필요', '검수 중', '빌드 통과'] },
   { role: '릴리스 관리', shirt: '#c8503a', walker: true, stops: peaceful ? ['발행 완료', '릴리스 기록 정리'] : ['일정 점검', '보드 업데이트'] },
   { role: '운영 지원', shirt: '#e8b84a', walker: true, stops: ['커피 타임', '커피 내리는 중', '잠깐 산책', '자리 복귀'] },
-  { role: '일정 독려', shirt: '#f5c542', walker: true, behavior: 'encourage', stops: peaceful ? ['모두 수고했어요!', '패치 발행 완료!', '커피 한잔하고 가요!'] : ['패치 진행, 어디까지 왔죠?', '커밋 준비됐나요?', '테스트 끝나면 바로 공유!'] },
+  { role: '일정 독려', shirt: '#f5c542', walker: true, behavior: 'encourage', stops: peaceful ? ['모두 수고했어요', '패치 발행 완료', '커피 한잔하고 가요'] : ['패치 진행, 어디까지 왔죠?', '커밋 준비됐나요?', '테스트 끝나면 바로 공유'] },
 ];
 export const AS_OF_DATE = '2026-11-13';
 export const TIME_ZONE = 'Asia/Seoul';

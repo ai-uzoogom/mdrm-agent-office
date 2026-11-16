@@ -13,6 +13,7 @@ export class OfficeScene {
     this.patches = patchRecords();
     this.peaceful = this.active.length === 0;
     this.graves = [];
+    this.bubbleQueue=[];this.activeBubble=null;
     this.floor = 'office';this.floorProgress=0;this.floorRaf=null;this.floorTransition=null;
     this.floorViews={office:{zoom:1,pan:[0,0]},basement:{zoom:1.25,pan:[0,0]}};
     this.meetingStatus = this.peaceful ? '발행 기록 정리' : '일정 점검';
@@ -158,10 +159,10 @@ export class OfficeScene {
     }
     this.hero=hero();this.scene.add(this.hero.root);this.hero.root.position.set(6.5,0,14.7);this.hero.root.rotation.y=Math.PI/2;this.hero.home=this.hero.root.position.clone();this.mixers.push(this.hero.mixer);
     if (this.peaceful) this.hero.root.rotation.y = Math.PI/4;
-    this.register(this.hero,'hero',()=> this.peaceful ? '전투 끝. 이제 한숨 돌리자!' : '방어선은 내가 지킨다');this.label('name-label hero','HERO · MDRM',this.hero.root,6.5);
-    this.bubble(this.hero,this.peaceful ? '서버실에 평화가 돌아왔어요' : '오늘도 이상 무!',5,{fixed:this.reduced});
+    this.register(this.hero,'hero',()=> this.peaceful ? '전투 끝. 이제 한숨 돌리자' : '방어선은 내가 지킨다');this.label('name-label hero','HERO · MDRM',this.hero.root,6.5);
+    this.bubble(this.hero,this.peaceful ? '서버실에 평화가 돌아왔어요' : '오늘도 이상 무',5,{fixed:this.reduced});
     this.pet=robot();this.scene.add(this.pet.root);this.pet.root.position.set(2.7,0,18.7);this.pet.root.rotation.y=Math.PI/3;this.pet.home=this.pet.root.position.clone();
-    this.register(this.pet,'pet',()=> '삐빅!');this.label('name-label pet','PET · AGENT',this.pet.root,4.8);this.bubble(this.pet,'삐빅!',4,{fixed:this.reduced});
+    this.register(this.pet,'pet',()=> '삐빅');this.label('name-label pet','PET · AGENT',this.pet.root,4.8);this.bubble(this.pet,'삐빅',4,{fixed:this.reduced});
     // A voxel fissure, painted light and emissive geometry keep the one-sun lighting setup.
     const rift=group(this.scene,27,0,3.4);
     for(const [x,y,w,h] of [[-2.3,3,1.5,6],[2.3,3.7,1.5,7.4],[-.7,7,1.8,1.4],[1.2,7.6,1.7,1.3]])box(rift,w,h,1.4,'#54486d',x,y,0);
@@ -307,12 +308,42 @@ export class OfficeScene {
     const corners=[[-width/2,height/2,0],[width/2,height/2,0],[-width/2,-height/2,0]].map(p=>new THREE.Vector3(...p));
     this.overlay.append(el);this.surfaceLabels.push({el,anchor,corners,pixelWidth,pixelHeight,point:new THREE.Vector3()});return el;
   }
-  bubble(actor,text,duration=3,{fixed=false,battle=false}={}){
+  bubble(actor,text,duration=3,{fixed=false,battle=false,priority=false}={}){
     let entry=this.bubbles.find(b=>b.actor===actor);
-    if(!entry){const el=document.createElement('div');el.className='overlay bubble';this.overlay.append(el);entry={el,actor,target:actor.root,height:(actor.height??4.5)+2.4};this.bubbles.push(entry);}
-    entry.el.textContent=text;entry.el.hidden=false;entry.until=this.elapsed+duration;entry.fixed=fixed||this.reduced;
-    const color=/확인 필요/.test(text)?'#f6a050':/커밋!|빌드 통과/.test(text)?'#4fd16b':battle||actor.data?.behavior==='encourage'?'#f5c542':'#f4efe0';entry.el.style.setProperty('--bubble-color',color);entry.el.classList.toggle('battle-pop',battle);
+    if(!entry){
+      const el=document.createElement('div');el.className='overlay bubble';el.hidden=true;
+      this.overlay.append(el);entry={el,actor,target:actor.root,height:(actor.height??4.5)+2.4};this.bubbles.push(entry);
+    }
+    const event={entry,text,duration,fixed,battle,priority};
+    const pending=this.bubbleQueue.findIndex(item=>item.entry===entry);
+    if(priority||battle){
+      // A deliberate inspection gets its full reading time, even during combat.
+      if(battle&&this.activeBubble?.priority&&this.elapsed<this.activeBubble.until)return;
+      if(pending>=0)this.bubbleQueue.splice(pending,1);
+      this.showBubble(event);
+    }else if(!this.activeBubble){
+      this.showBubble(event);
+    }else if(pending>=0){
+      // Keep the latest state per actor without extending the visible message.
+      this.bubbleQueue[pending]=event;
+    }else{
+      this.bubbleQueue.push(event);
+    }
     if(this.ready&&(this.reduced||document.hidden))this.render();
+  }
+  showBubble({entry,text,duration,fixed,battle,priority}){
+    if(this.activeBubble)this.activeBubble.el.hidden=true;
+    this.activeBubble=entry;
+    entry.el.textContent=text;entry.el.hidden=false;entry.until=this.elapsed+duration;
+    entry.fixed=fixed||this.reduced;entry.priority=priority;
+    const color=/확인 필요/.test(text)?'#f6a050':battle?'#f5c542':'#f4efe0';
+    entry.el.style.setProperty('--bubble-color',color);entry.el.classList.toggle('battle-pop',battle);
+  }
+  advanceBubble(){
+    if(this.activeBubble&&!this.activeBubble.fixed&&this.elapsed>=this.activeBubble.until){
+      this.activeBubble.el.hidden=true;this.activeBubble=null;
+    }
+    if(!this.activeBubble&&this.bubbleQueue.length)this.showBubble(this.bubbleQueue.shift());
   }
   describe(actor){
     if(actor.switchFloor){this.selectFloor(actor.switchFloor);return;}
@@ -321,7 +352,7 @@ export class OfficeScene {
       this.onGrave(actor.record.issue.id);
       return;
     }
-    const text=actor.describe();this.bubble(actor,text,4.5);this.onLog(text,actor===this.hero||actor===this.pet?'good':'');
+    const text=actor.describe();this.bubble(actor,text,4.5,{priority:true});this.onLog(text,actor===this.hero||actor===this.pet?'good':'');
     if(actor===this.pet&&!this.reduced)this.pet.jumpUntil=this.elapsed+.85;
   }
   inspect(key){this.clickHandlers.get(key)?.();}
@@ -395,7 +426,13 @@ export class OfficeScene {
     document.addEventListener('visibilitychange',()=>this.updateMotion());
     window.addEventListener('resize',()=>this.resize());
     window.visualViewport?.addEventListener('resize',()=>this.resize());
-    this.motionQuery.addEventListener('change',event=>{this.reduced=event.matches;if(this.reduced){this.resetBattle();this.bubbles.forEach(b=>{b.fixed=true;b.el.hidden=false;});this.crewActors.forEach(a=>this.bubble(a,a.status,3,{fixed:true}));}else this.bubbles.forEach(b=>{b.fixed=false;b.until=this.elapsed+3;});this.updateMotion();});
+    this.motionQuery.addEventListener('change',event=>{
+      this.reduced=event.matches;
+      if(this.reduced)this.resetBattle();
+      if(this.activeBubble){this.activeBubble.fixed=this.reduced;this.activeBubble.until=this.elapsed+3;}
+      this.bubbleQueue.forEach(item=>{item.fixed=this.reduced;});
+      this.updateMotion();
+    });
     this.canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();if(this.raf)cancelAnimationFrame(this.raf);this.raf=null;this.onMotion('그래픽 연결이 중단되었습니다');});
     this.canvas.addEventListener('webglcontextrestored',()=>location.reload());
   }
@@ -474,7 +511,7 @@ export class OfficeScene {
     if(this.raf)cancelAnimationFrame(this.raf);this.raf=null;this.lastTime=null;
     const paused=document.hidden||this.reduced;
     if(paused&&this.floorTransition)this.finishFloorTransition();
-    this.onMotion(this.reduced?'모션 줄이기 · 정지 화면':document.hidden?'잠시 쉬어가는 중':'자율 업무 진행 중');
+    this.onMotion(this.reduced?'모션 줄이기':document.hidden?'잠시 쉬어가는 중':'업무 연출 중');
     if(!this.ready)return;
     if(paused){if(!document.hidden)this.render();return;}
     this.raf=requestAnimationFrame(t=>this.frame(t));
@@ -518,7 +555,7 @@ export class OfficeScene {
     }
     if(!this.battle&&this.monsters.length&&t>=this.nextBattle)this.startBattle();
     if(this.battle)this.updateBattle();
-    this.bubbles.forEach(b=>{if(!b.fixed&&t>b.until)b.el.hidden=true;});
+    this.advanceBubble();
     if(t-this.lastCalendar>30){this.lastCalendar=t;this.boardLabel.textContent=this.boardTitle();window.dispatchEvent(new Event('office:calendar'));}
   }
   walk(actor,dt){
@@ -530,7 +567,7 @@ export class OfficeScene {
   startBattle(){
     const actor=this.monsters[this.battleCursor%this.monsters.length];this.battleCursor++;
     const type=actor.kind==='dragon'?'breath':'melee';this.battle={actor,type,start:this.elapsed,impact:false,defended:false};this.metrics.combat++;this.metrics[type]++;
-    this.nextBattle=this.elapsed+random(2.6,4.2);this.pet.jumpUntil=this.elapsed+.85;this.bubble(this.pet,'삐빅!',1.2,{battle:true});
+    this.nextBattle=this.elapsed+random(2.6,4.2);this.pet.jumpUntil=this.elapsed+.85;this.bubble(this.pet,'삐빅',1.2,{battle:true});
     const label=issueLabel(actor.issue);this.onLog(`${particle(label)} ${type==='breath'?'브레스를 준비한다':'방어선으로 다가온다'}`,'warn');
     if(type==='melee'){actor.attackPosition=new THREE.Vector3(12.5,actor.home.y,14.7);actor.setAction?.('walk');}
   }
@@ -542,7 +579,7 @@ export class OfficeScene {
       else if(t<1.1){actor.setAction?.(actor.kind==='ghost'?'attack-melee-right':'idle');if(actor.club)actor.club.rotation.z=-.22-(t-.8)/.3*1.5;}
       else if(t<1.27){const p=(t-1.1)/.17;this.hero.root.position.x=lerp(this.hero.home.x,10.2,p);this.hero.setEquipmentPose(p,0);if(actor.club)actor.club.rotation.z=lerp(-1.72,.4,p);}
       else if(t<2.25){
-        if(!battle.impact){battle.impact=true;actor.setAction?.('idle');this.bubble(this.hero,'반격!',1.3,{battle:true});this.onLog(`MDRM 용사가 ${particle(issueLabel(actor.issue),'을/를')} 밀어냈다`,'good');this.sparks.visible=true;this.sparks.position.set(11.5,2.7,14.7);this.flash(actor,true);}
+        if(!battle.impact){battle.impact=true;actor.setAction?.('idle');this.bubble(this.hero,'반격',1.3,{battle:true});this.onLog(`MDRM 용사가 ${particle(issueLabel(actor.issue),'을/를')} 밀어냈다`,'good');this.sparks.visible=true;this.sparks.position.set(11.5,2.7,14.7);this.flash(actor,true);}
         const p=Math.min(1,(t-1.27)/.9);actor.root.position.lerpVectors(actor.attackPosition,actor.home,ease(p));actor.root.position.y+=Math.sin(p*Math.PI)*1.1;this.hero.root.position.lerpVectors(new THREE.Vector3(10.2,0,14.7),this.hero.home,ease(Math.min(1,p*1.4)));this.hero.setEquipmentPose(1-p,0);actor.root.scale.copy(actor.baseScale);if(actor.club)actor.club.rotation.z=lerp(.4,-.22,p);
         const st=t-1.27;this.sparks.children.forEach(s=>{s.position.copy(s.userData.velocity).multiplyScalar(st);s.position.y-=st*st*3;s.scale.setScalar(Math.max(.03,.3-st*.4));});if(st>.14)this.flash(actor,false);if(st>.6)this.sparks.visible=false;
       } else this.resetBattle();
@@ -551,7 +588,7 @@ export class OfficeScene {
       actor.mouth.getWorldPosition(this.projectVector);const origin=this.projectVector.clone(),target=this.hero.shieldImpact.getWorldPosition(new THREE.Vector3());
       let growth=t<.8?t/.8:t<1.5?1:Math.max(0,1-(t-1.5)/.55);
       this.flame.visible=growth>0;this.flame.children.forEach((f,i)=>{const p=(i+1)/this.flame.children.length;f.visible=p<=growth;f.position.lerpVectors(origin,target,p);f.position.y+=Math.sin(this.elapsed*17+i*2)*.15;const size=.35+p*.6;f.scale.set(size,size*(.7+Math.sin(this.elapsed*19+i)*.2),size);});
-      if(t>=.7&&!battle.defended){battle.defended=true;this.bubble(this.hero,'방어!',1.3,{battle:true});this.onLog(`MDRM 용사가 ${issueLabel(actor.issue)}의 브레스를 막았다`,'good');}
+      if(t>=.7&&!battle.defended){battle.defended=true;this.bubble(this.hero,'방어',1.3,{battle:true});this.onLog(`MDRM 용사가 ${issueLabel(actor.issue)}의 브레스를 막았다`,'good');}
       if(t>=2.05)this.resetBattle();
     }
   }
@@ -573,10 +610,6 @@ export class OfficeScene {
     for(const entry of [...this.labels,...this.surfaceLabels]){
       entry.el.style.visibility=this.objectFloor(entry.target??entry.anchor)===this.floor&&!this.floorTransition?'':'hidden';
     }
-    for(const entry of this.labels){
-      const p=this.project(entry.target,entry.height);entry.el.style.transform=`translate(${Math.round(p.x)}px,${Math.round(p.y)}px) translate(-50%,-100%)`;
-      const w=entry.el.offsetWidth,h=entry.el.offsetHeight;if(entry.el.style.visibility!=='hidden'&&w&&p.x>=0&&p.x<=this.width&&p.y>=0&&p.y<=this.height)occupied.push({x:p.x,y:p.y,w,h});
-    }
     for(const entry of this.surfaceLabels){
       const [tl,tr,bl]=entry.corners.map(p=>this.project(entry.point.copy(p).applyMatrix4(entry.anchor.matrixWorld)));
       // Orthographic projection is affine: map the entire HTML rectangle to the surface.
@@ -586,6 +619,31 @@ export class OfficeScene {
         const left=Math.min(...xs),right=Math.max(...xs),top=Math.min(...ys),bottom=Math.max(...ys);
         occupied.push({x:(left+right)/2,y:bottom,w:right-left,h:bottom-top});
       }
+    }
+    for(const entry of this.labels){
+      const p=this.project(entry.target,entry.height),w=entry.el.offsetWidth,h=entry.el.offsetHeight;
+      let x=p.x,y=p.y;
+      if(entry.el.style.visibility!=='hidden'&&w&&p.x>=0&&p.x<=this.width&&p.y>=0&&p.y<=this.height){
+        let best={x,y,score:Infinity};
+        for(const row of [0,-1,1,-2,2,-3,3,-4,4])for(const dx of [0,-w*.55,w*.55,-w,w]){
+          const dy=row*(h+4);
+          const nx=Math.max(w/2+4,Math.min(this.width-w/2-4,p.x+dx));
+          const ny=Math.max(h+4,Math.min(this.height-8,p.y+dy));
+          let overlap=0;
+          for(const box of occupied){
+            const ox=Math.max(0,(w+box.w)/2+3-Math.abs(nx-box.x));
+            const oy=Math.max(0,(h+box.h)/2+3-Math.abs(ny-h/2-(box.y-box.h/2)));
+            overlap+=ox*oy;
+          }
+          const score=(nx-p.x)**2+(ny-p.y)**2+overlap*1000000;
+          if(score<best.score)best={x:nx,y:ny,score};
+        }
+        ({x,y}=best);occupied.push({x,y,w,h});
+      }
+      const distance=Math.hypot(p.x-x,p.y-y);
+      entry.el.style.setProperty('--stem-length',`${distance>3?distance:0}px`);
+      entry.el.style.setProperty('--stem-angle',`${Math.atan2(p.y-y,p.x-x)}rad`);
+      entry.el.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px) translate(-50%,-100%)`;
     }
     // Keep balloons near actors while leaving wall signs and the board heading readable.
     for(const entry of this.bubbles){
@@ -613,6 +671,6 @@ export class OfficeScene {
   }
   snapshot(){
     const graves = this.graves.map(({record,root}) => ({id:record.issue.id,version:record.version,screen:this.project(new THREE.Vector3().setFromMatrixPosition(root.matrixWorld).add(new THREE.Vector3(0,2.2,-2.1)))}));
-    return {floor:this.floor,floorProgress:this.floorProgress,transitioning:!!this.floorTransition,basementPreview:this.project(new THREE.Vector3(20,-20,16)),ready:this.ready,peaceful:this.peaceful,riftOpen:!!this.riftCore,graves,view:{zoom:this.zoom,pan:this.viewPan.toArray()},elapsed:this.elapsed,frames:this.frameCount,reduced:this.reduced,hidden:document.hidden,metrics:{...this.metrics},issues:this.monsters.map(a=>({id:a.issue.id,grade:a.issue.grade,kind:a.kind,height:a.height,scale:a.root.scale.toArray(),position:a.root.position.toArray(),screen:this.project(a.root,a.height*.45)})),crew:this.crewActors.map(a=>({key:a.key,status:a.status,model:a.filename,behavior:a.data.behavior,calling:a.calling,soundWaves:a.waves?.visible,position:a.root.position.toArray(),screen:this.project(a.root,2)})),hero:this.project(this.hero.root,3),pet:this.project(this.pet.root,2),rack:this.project(this.actors.find(a=>a.kind==='rack').root,4),assets:this.assets,target:{width:this.renderTarget.width,height:this.renderTarget.height},viewport:{width:this.width,height:this.height},drawCalls:this.sceneDrawCalls,walkObstacles:this.obstacles.map(({name,object})=>{const b=new THREE.Box3().setFromObject(object);return {name,min:b.min.toArray(),max:b.max.toArray()};})};
+    return {bubble:{active:this.activeBubble?.actor.key??null,queued:this.bubbleQueue.length},floor:this.floor,floorProgress:this.floorProgress,transitioning:!!this.floorTransition,basementPreview:this.project(new THREE.Vector3(20,-20,16)),ready:this.ready,peaceful:this.peaceful,riftOpen:!!this.riftCore,graves,view:{zoom:this.zoom,pan:this.viewPan.toArray()},elapsed:this.elapsed,frames:this.frameCount,reduced:this.reduced,hidden:document.hidden,metrics:{...this.metrics},issues:this.monsters.map(a=>({id:a.issue.id,grade:a.issue.grade,kind:a.kind,height:a.height,scale:a.root.scale.toArray(),position:a.root.position.toArray(),screen:this.project(a.root,a.height*.45)})),crew:this.crewActors.map(a=>({key:a.key,status:a.status,model:a.filename,behavior:a.data.behavior,calling:a.calling,soundWaves:a.waves?.visible,position:a.root.position.toArray(),screen:this.project(a.root,2)})),hero:this.project(this.hero.root,3),pet:this.project(this.pet.root,2),rack:this.project(this.actors.find(a=>a.kind==='rack').root,4),assets:this.assets,target:{width:this.renderTarget.width,height:this.renderTarget.height},viewport:{width:this.width,height:this.height},drawCalls:this.sceneDrawCalls,walkObstacles:this.obstacles.map(({name,object})=>{const b=new THREE.Box3().setFromObject(object);return {name,min:b.min.toArray(),max:b.max.toArray()};})};
   }
 }
