@@ -82,7 +82,8 @@ export class OfficeScene {
     this.addProp('bookcaseOpen',{h:6.9,w:7,d:1.5},-28.5,0,-10,Math.PI/2);
     for(let row=0;row<3;row++)for(let col=0;col<5;col++)box(room,.65,1.2,.75,['#c79bff','#f5c542','#4fb3ff','#f6a050','#4fd1c5'][(col+row)%5],-28,1.2+row*1.8,-12+col*.86);
     this.addProp('kitchenCabinet',{h:3.0,w:5.5,d:2.5},-26.1,0,-18.8);
-    this.addProp('kitchenCoffeeMachine',{h:2,w:2.2,d:1.8},-26.1,3,-18.7,Math.PI);
+    // The Kenney model's spout faces +Z, toward the counter's open side.
+    this.addProp('kitchenCoffeeMachine',{h:2,w:2.2,d:1.8},-26.1,3,-18.7);
     this.addProp('rugRectangle',{h:.12,w:5.8,d:7},-25.2,.12,-4);
     for(const [x,z,h] of [[-27,18,5],[1,-19,4.7],[28,-19.8,4.5],[7,-18,3.9]])this.addProp('pottedPlant',{h},x,0,z);
     this.meetingTable=this.addProp('table',{h:2.55,w:11,d:6.5},18,0,-8.5);
