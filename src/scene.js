@@ -13,6 +13,7 @@ export class OfficeScene {
     this.patches = patchRecords();
     this.peaceful = this.active.length === 0;
     this.graves = [];
+    this.activeBubble=null;this.nextBubbleAt=0;this.hoverPointer=null;this.hoveredActorKey=null;
     this.floor = 'office';this.floorProgress=0;this.floorRaf=null;this.floorTransition=null;
     this.floorViews={office:{zoom:1,pan:[0,0]},basement:{zoom:1.25,pan:[0,0]}};
     this.meetingStatusIndex = 0;
@@ -297,7 +298,10 @@ export class OfficeScene {
   }
   label(className,text,target,height=0){
     const el=document.createElement('div');el.className='overlay '+className;el.textContent=text;
-    this.overlay.append(el);this.labels.push({el,target,height});return el;
+    const actorKey=target.userData.actorKey;
+    const hoverOnly=className.includes('name-label')&&/^(crew-|hero$|pet$)/.test(actorKey??'');
+    if(hoverOnly){el.classList.add('hover-label');el.dataset.actor=actorKey;el.style.visibility='hidden';}
+    this.overlay.append(el);this.labels.push({el,target,height,hoverOnly,actorKey});return el;
   }
   surfaceLabel(className,text,parent,{x=0,y=0,z=0,width,height,rotation=0}){
     // A local plane follows the same transform as its wall or whiteboard.
@@ -308,10 +312,14 @@ export class OfficeScene {
     const corners=[[-width/2,height/2,0],[width/2,height/2,0],[-width/2,-height/2,0]].map(p=>new THREE.Vector3(...p));
     this.overlay.append(el);this.surfaceLabels.push({el,anchor,corners,pixelWidth,pixelHeight,point:new THREE.Vector3()});return el;
   }
-  bubble(actor,text,duration=3,{fixed=false,battle=false}={}){
+  bubble(actor,text,duration=3,{fixed=false,battle=false,priority=false}={}){
+    // Do not queue old status messages or interrupt a message being read.
+    if(!priority&&(this.activeBubble?.fixed||this.elapsed<this.nextBubbleAt))return;
+    if(this.activeBubble)this.activeBubble.el.hidden=true;
     let entry=this.bubbles.find(b=>b.actor===actor);
     if(!entry){const el=document.createElement('div');el.className='overlay bubble';el.dataset.actor=actor.key;this.overlay.append(el);entry={el,actor,target:actor.root,height:(actor.height??4.5)+2.4};this.bubbles.push(entry);}
     entry.el.textContent=text;entry.el.hidden=false;entry.until=this.elapsed+duration;entry.fixed=fixed||this.reduced;
+    this.activeBubble=entry;this.nextBubbleAt=this.elapsed+duration+.65;
     const color=/확인 필요/.test(text)?'#f6a050':/커밋|통과|완료/.test(text)?'#4fd16b':battle||actor.data?.behavior==='encourage'?'#f5c542':'#f4efe0';entry.el.style.setProperty('--bubble-color',color);entry.el.classList.toggle('battle-pop',battle);
     if(this.ready&&(this.reduced||document.hidden))this.render();
   }
@@ -322,13 +330,14 @@ export class OfficeScene {
       this.onGrave(actor.record.issue.id);
       return;
     }
-    const text=actor.describe();this.bubble(actor,text,4.5);this.onLog(text,actor===this.hero||actor===this.pet?'good':'');
+    const text=actor.describe();this.bubble(actor,text,4.5,{priority:true});this.onLog(text,actor===this.hero||actor===this.pet?'good':'');
     if(actor===this.pet&&!this.reduced)this.pet.jumpUntil=this.elapsed+.85;
   }
   inspect(key){this.clickHandlers.get(key)?.();}
   installEvents(){
     this.canvas.addEventListener('pointerdown',event=>{
       if(event.button!==0||this.drag||this.touchGesture)return;this.suppressClick=false;
+      this.hoverPointer=null;this.updateOverlays();
       if(this.zoom<=VIEW.min&&event.pointerType==='touch')return;
       this.drag={id:event.pointerId,x:event.clientX,y:event.clientY,startX:event.clientX,startY:event.clientY,moved:false};this.canvas.setPointerCapture(event.pointerId);
     });
@@ -340,7 +349,8 @@ export class OfficeScene {
         drag.moved=true;this.suppressClick=true;this.canvas.classList.add('is-dragging');
         this.panByPixels(event.clientX-drag.x,event.clientY-drag.y);drag.x=event.clientX;drag.y=event.clientY;return;
       }
-      this.canvas.classList.toggle('is-pointing',!!this.hit(event));
+      this.hoverPointer=event.pointerType==='mouse'?{clientX:event.clientX,clientY:event.clientY}:null;
+      this.updateOverlays();
     });
     const endDrag=event=>{
       if(this.drag?.id!==event.pointerId)return;this.drag=null;this.canvas.classList.remove('is-dragging');
@@ -352,7 +362,7 @@ export class OfficeScene {
     };
     const beginPinch=event=>{
       if(event.cancelable)event.preventDefault();this.suppressClick=true;
-      const drag=this.drag;this.drag=null;this.canvas.classList.remove('is-dragging','is-pointing');
+      const drag=this.drag;this.drag=null;this.hoverPointer=null;this.updateOverlays();this.canvas.classList.remove('is-dragging','is-pointing');
       if(drag&&this.canvas.hasPointerCapture(drag.id))this.canvas.releasePointerCapture(drag.id);
       this.touchGesture=touchPair(event.touches);
     };
@@ -376,7 +386,7 @@ export class OfficeScene {
       this.applyView();
     });
     this.canvas.addEventListener('touchcancel',()=>{if(this.touchGesture)this.suppressClick=true;this.touchGesture=null;this.applyView();});
-    this.canvas.addEventListener('pointerleave',()=>this.canvas.classList.remove('is-pointing'));
+    this.canvas.addEventListener('pointerleave',()=>{this.hoverPointer=null;this.updateOverlays();});
     this.canvas.addEventListener('click',event=>{if(this.suppressClick){this.suppressClick=false;return;}const actor=this.hit(event);if(actor)this.describe(actor);});
     this.canvas.addEventListener('wheel',event=>{
       event.preventDefault();
@@ -396,7 +406,15 @@ export class OfficeScene {
     document.addEventListener('visibilitychange',()=>this.updateMotion());
     window.addEventListener('resize',()=>this.resize());
     window.visualViewport?.addEventListener('resize',()=>this.resize());
-    this.motionQuery.addEventListener('change',event=>{this.reduced=event.matches;if(this.reduced){this.resetBattle();this.bubbles.forEach(b=>{b.fixed=true;b.el.hidden=false;});this.crewActors.forEach(a=>this.bubble(a,a.status,3,{fixed:true}));}else this.bubbles.forEach(b=>{b.fixed=false;b.until=this.elapsed+3;});this.updateMotion();});
+    this.motionQuery.addEventListener('change',event=>{
+      this.reduced=event.matches;
+      if(this.reduced)this.resetBattle();
+      if(this.activeBubble&&!this.activeBubble.el.hidden){
+        this.activeBubble.fixed=this.reduced;this.activeBubble.until=this.elapsed+3;
+        this.nextBubbleAt=this.elapsed+3.65;
+      }
+      this.updateMotion();
+    });
     this.canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();if(this.raf)cancelAnimationFrame(this.raf);this.raf=null;this.onMotion('그래픽 연결이 중단되었습니다');});
     this.canvas.addEventListener('webglcontextrestored',()=>location.reload());
   }
@@ -571,8 +589,11 @@ export class OfficeScene {
   }
   updateOverlays(){
     const occupied=[];
+    const hovered=this.hoverPointer&&!this.drag&&!this.touchGesture?this.hit(this.hoverPointer):null;
+    this.hoveredActorKey=hovered?.key??null;
+    this.canvas.classList.toggle('is-pointing',!!hovered);
     for(const entry of [...this.labels,...this.surfaceLabels]){
-      entry.el.style.visibility=this.objectFloor(entry.target??entry.anchor)===this.floor&&!this.floorTransition?'':'hidden';
+      entry.el.style.visibility=this.objectFloor(entry.target??entry.anchor)===this.floor&&!this.floorTransition&&(!entry.hoverOnly||entry.actorKey===this.hoveredActorKey)?'':'hidden';
     }
     for(const entry of this.surfaceLabels){
       const [tl,tr,bl]=entry.corners.map(p=>this.project(entry.point.copy(p).applyMatrix4(entry.anchor.matrixWorld)));

@@ -14,33 +14,42 @@ try{
  page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
  await page.goto(url);await page.waitForFunction(()=>document.documentElement.dataset.officeReady==='true');await page.evaluate(()=>document.fonts.ready);
  const first=await snap(page);
- assert.ok((await bubbles(page)).length>1,'character bubbles should appear independently');
- const initialText=(await bubbles(page)).join(' ');
- assert.match(initialText,/java4shell 분석/);
- assert.match(initialText,/기존 패치 재검증/);
- assert.match(initialText,/패치 일정 미정/);
- assert.doesNotMatch(initialText,/php2shell 패치|nginx 패치|Java 인증서 패치|오늘도 이상 무/);
- for(let i=0;i<10;i++){
-  const state=await snap(page);
-  for(const actor of state.crew){
-   const bubble=state.bubbles.find(b=>b.actor===actor.key);
-   if(bubble)assert.equal(bubble.text,actor.status,'a stale queued message is showing');
-  }
-  await page.waitForTimeout(500);
- }
- const after=await snap(page);assert.equal(first.viewport.height,after.viewport.height,'activity changed scene height');
- record('independent bubbles show current java4shell work without delayed messages');
+ const visibleLabels=()=>page.locator('.hover-label').evaluateAll(els=>els.filter(el=>getComputedStyle(el).visibility!=='hidden').map(el=>el.dataset.actor));
+ assert.deepEqual(await visibleLabels(),[],'role signs should be hidden without hover');
+ assert.equal((await bubbles(page)).length,1);
+ assert.match((await bubbles(page))[0],/java4shell 분석/);
+ await page.evaluate(()=>{
+  window.speechSamples=[];
+  window.speechSampler=setInterval(()=>window.speechSamples.push([...document.querySelectorAll('.bubble:not([hidden])')].map(el=>el.textContent)),20);
+ });
+ await page.waitForTimeout(10000);
+ const samples=await page.evaluate(()=>{clearInterval(window.speechSampler);return window.speechSamples;});
+ assert.ok(samples.every(items=>items.length<=1),'simultaneous speech bubbles');
+ assert.ok(samples.some(items=>items.length===0),'missing breathing space between messages');
+ assert.ok(new Set(samples.flat()).size>=2,'automatic dialogue did not advance');
+ assert.equal(first.viewport.height,(await snap(page)).viewport.height);
+ record('at most one automatic bubble, with gaps and no queued old messages');
  await page.locator('[data-inspect="crew-6"]').click();
- assert.match(await page.locator('.bubble[data-actor="crew-6"]').textContent(),/일정 독려/);
+ assert.match((await bubbles(page))[0],/일정 독려/);
+ await page.waitForTimeout(1800);
+ assert.match((await bubbles(page))[0],/일정 독려/,'automatic speech interrupted the selected character');
  await page.locator('[data-inspect="pet"]').click();
- assert.equal(await page.locator('.bubble[data-actor="pet"]').textContent(),'삐빅');
- assert.equal(await page.locator('.bubble[data-actor="crew-6"]').getAttribute('hidden'),null);
- record('selecting another character does not dismiss the previous character bubble');
+ assert.deepEqual(await bubbles(page),['삐빅']);
+ record('explicit selection immediately replaces speech and remains readable during combat');
  await page.emulateMedia({reducedMotion:'reduce'});await page.waitForTimeout(100);
  const frozen=await snap(page),fixedText=await bubbles(page);await page.waitForTimeout(300);
  assert.equal((await snap(page)).frames,frozen.frames);assert.deepEqual(await bubbles(page),fixedText);
- assert.ok(fixedText.length>1);
- record('reduced motion freezes independent bubbles and stops rendering');
+ assert.ok(fixedText.length<=1);
+ await page.locator('#office-canvas').scrollIntoViewIfNeeded();
+ const rect=await page.locator('#office-canvas').boundingBox();
+ for(const key of ['crew-0','crew-5','crew-6']){
+  const actor=(await snap(page)).crew.find(a=>a.key===key);
+  await page.mouse.move(rect.x+actor.screen.x,rect.y+actor.screen.y);
+  assert.deepEqual(await visibleLabels(),[key],`hover did not isolate ${key}`);
+ }
+ await page.mouse.move(0,0);assert.deepEqual(await visibleLabels(),[]);
+ assert.equal((await snap(page)).frames,frozen.frames,'hover restarted the reduced-motion renderer');
+ record('role signs appear only over the hovered character, clear on exit, and work with reduced motion');
  const contrast=await page.evaluate(()=>{
   const rgb=s=>(s.match(/[\d.]+/g)||[]).map(Number);
   const over=(a,b)=>{const alpha=a[3]??1;return a.slice(0,3).map((v,i)=>v*alpha+b[i]*(1-alpha));};
@@ -74,7 +83,7 @@ try{
    await page.locator(`#tab-${tab}`).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   }
   await page.locator('#tab-history').click();await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
-  if(width===1440||width===390)await page.screenshot({path:`test-results/dialogue-restored-${width}.png`,fullPage:true});
+  if(width===1440||width===390)await page.screenshot({path:`test-results/hover-speech-${width}.png`,fullPage:true});
  }
  record('12px secondary text, 44px rows, all tabs and seven desktop/mobile sizes fit');
  await page.setViewportSize({width:390,height:844});
@@ -82,9 +91,20 @@ try{
  assert.equal((await snap(page)).floor,'basement');
  assert.ok(await page.locator('button[data-floor="basement"]').evaluate(el=>getComputedStyle(el).outlineStyle==='solid'));
  assert.equal(await page.locator('.bubble:not([hidden])').evaluateAll(els=>els.filter(el=>getComputedStyle(el).visibility!=='hidden').length),0);
- await page.locator('.scene-panel').screenshot({path:'test-results/dialogue-restored-basement.png'});
+ await page.locator('.scene-panel').screenshot({path:'test-results/hover-speech-basement.png'});
  await page.locator('button[data-floor="office"]').click();assert.equal((await snap(page)).floor,'office');
  record('keyboard floor selection has visible focus; basement hides office bubbles');
+ const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
+ mobile.on('pageerror',e=>errors.push(String(e)));
+ await mobile.goto(url);await mobile.waitForFunction(()=>document.documentElement.dataset.officeReady==='true');
+ assert.equal((await bubbles(mobile)).length,1,'initial reduced motion shows more than one bubble');
+ await mobile.locator('[data-inspect="crew-5"]').tap();
+ assert.match((await bubbles(mobile))[0],/운영 지원/);
+ assert.equal(await mobile.locator('.hover-label').evaluateAll(els=>els.filter(el=>getComputedStyle(el).visibility!=='hidden').length),0);
+ await mobile.locator('#office-canvas').scrollIntoViewIfNeeded();
+ await mobile.locator('.scene-panel').screenshot({path:'test-results/hover-speech-touch.png'});
+ await mobile.close();
+ record('mobile tap still opens character details without sticky hover signs or multiple bubbles');
  assert.deepEqual(errors,[]);record('zero page, console and HTTP errors');
  await writeFile('test-results/polish-report.json',JSON.stringify({url,checks,contrast,errors},null,2));
 }catch(e){console.error(e);process.exitCode=1;await writeFile('test-results/polish-report.json',JSON.stringify({url,checks,errors,failure:String(e)},null,2));}
