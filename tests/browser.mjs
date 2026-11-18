@@ -113,7 +113,7 @@ try{
   assert.ok((await page.locator('#activity-log li').first().textContent()).includes(expected),`raycast ${key}`);
  }
  const state=await snapshot(page);
- for(const [point,expected] of [[state.crew[0].screen,'php2shell 패치'],[state.issues[2].screen,'nginx 유령']]){
+ for(const [point,expected] of [[state.crew[0].screen,CREW[0].role],[state.issues[2].screen,'nginx 유령']]){
   await page.mouse.click(canvasRect.x+point.x,canvasRect.y+point.y);await page.waitForTimeout(40);
   assert.ok((await page.locator('#activity-log li').first().textContent()).includes(expected),`raycast ${expected}`);
  }

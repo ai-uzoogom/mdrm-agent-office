@@ -13,23 +13,34 @@ try{
  page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
  await page.goto(url);await page.waitForFunction(()=>document.documentElement.dataset.officeReady==='true');await page.evaluate(()=>document.fonts.ready);
- const first=await snap(page),actors=new Set();
- for(let i=0;i<20;i++){
-  assert.equal((await bubbles(page)).length,1,'more than one balloon is competing with the office');
-  actors.add((await snap(page)).bubble.active);await page.waitForTimeout(500);
+ const first=await snap(page);
+ assert.ok((await bubbles(page)).length>1,'character bubbles should appear independently');
+ const initialText=(await bubbles(page)).join(' ');
+ assert.match(initialText,/java4shell 분석/);
+ assert.match(initialText,/기존 패치 재검증/);
+ assert.match(initialText,/패치 일정 미정/);
+ assert.doesNotMatch(initialText,/php2shell 패치|nginx 패치|Java 인증서 패치|오늘도 이상 무/);
+ for(let i=0;i<10;i++){
+  const state=await snap(page);
+  for(const actor of state.crew){
+   const bubble=state.bubbles.find(b=>b.actor===actor.key);
+   if(bubble)assert.equal(bubble.text,actor.status,'a stale queued message is showing');
+  }
+  await page.waitForTimeout(500);
  }
- assert.ok(actors.size>=2,'automatic messages never advance');
  const after=await snap(page);assert.equal(first.viewport.height,after.viewport.height,'activity changed scene height');
- assert.ok(after.bubble.queued<=11,'unbounded message queue');
- record('one automatic bubble at a time; messages advance; scene height and queue stay bounded');
+ record('independent bubbles show current java4shell work without delayed messages');
  await page.locator('[data-inspect="crew-6"]').click();
- assert.match((await bubbles(page))[0],/일정 독려/);
- await page.waitForTimeout(1800);assert.match((await bubbles(page))[0],/일정 독려/);
- await page.locator('[data-inspect="pet"]').click();assert.deepEqual(await bubbles(page),['삐빅']);
- record('explicit character selection responds immediately and keeps its reading time');
+ assert.match(await page.locator('.bubble[data-actor="crew-6"]').textContent(),/일정 독려/);
+ await page.locator('[data-inspect="pet"]').click();
+ assert.equal(await page.locator('.bubble[data-actor="pet"]').textContent(),'삐빅');
+ assert.equal(await page.locator('.bubble[data-actor="crew-6"]').getAttribute('hidden'),null);
+ record('selecting another character does not dismiss the previous character bubble');
  await page.emulateMedia({reducedMotion:'reduce'});await page.waitForTimeout(100);
- const frozen=await snap(page);await page.waitForTimeout(300);assert.equal((await snap(page)).frames,frozen.frames);assert.equal((await bubbles(page)).length,1);
- record('reduced motion freezes one bubble and stops rendering');
+ const frozen=await snap(page),fixedText=await bubbles(page);await page.waitForTimeout(300);
+ assert.equal((await snap(page)).frames,frozen.frames);assert.deepEqual(await bubbles(page),fixedText);
+ assert.ok(fixedText.length>1);
+ record('reduced motion freezes independent bubbles and stops rendering');
  const contrast=await page.evaluate(()=>{
   const rgb=s=>(s.match(/[\d.]+/g)||[]).map(Number);
   const over=(a,b)=>{const alpha=a[3]??1;return a.slice(0,3).map((v,i)=>v*alpha+b[i]*(1-alpha));};
@@ -63,7 +74,7 @@ try{
    await page.locator(`#tab-${tab}`).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   }
   await page.locator('#tab-history').click();await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
-  if(width===1440||width===390)await page.screenshot({path:`test-results/unslop-after-${width}.png`,fullPage:true});
+  if(width===1440||width===390)await page.screenshot({path:`test-results/dialogue-restored-${width}.png`,fullPage:true});
  }
  record('12px secondary text, 44px rows, all tabs and seven desktop/mobile sizes fit');
  await page.setViewportSize({width:390,height:844});
@@ -71,7 +82,7 @@ try{
  assert.equal((await snap(page)).floor,'basement');
  assert.ok(await page.locator('button[data-floor="basement"]').evaluate(el=>getComputedStyle(el).outlineStyle==='solid'));
  assert.equal(await page.locator('.bubble:not([hidden])').evaluateAll(els=>els.filter(el=>getComputedStyle(el).visibility!=='hidden').length),0);
- await page.locator('.scene-panel').screenshot({path:'test-results/unslop-after-basement.png'});
+ await page.locator('.scene-panel').screenshot({path:'test-results/dialogue-restored-basement.png'});
  await page.locator('button[data-floor="office"]').click();assert.equal((await snap(page)).floor,'office');
  record('keyboard floor selection has visible focus; basement hides office bubbles');
  assert.deepEqual(errors,[]);record('zero page, console and HTTP errors');
