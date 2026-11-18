@@ -78,6 +78,7 @@ try{
  await screenshot(page,'desktop');
  record('1280px initial render, local assets, thumbnails and KST');
  await page.evaluate(()=>{
+  window.__qaBattleSamples=[];window.__qaBattleTimer=setInterval(()=>{const s=window.__OFFICE_DEBUG__.snapshot();window.__qaBattleSamples.push({battle:s.battle,bubbles:s.bubbles});},20);
   window.__qaFrameTimes=[];const sample=t=>{window.__qaFrameTimes.push(t);window.__qaFrameRequest=requestAnimationFrame(sample);};window.__qaFrameRequest=requestAnimationFrame(sample);
   window.__qaGhostSamples=[];window.__qaGhostTimer=setInterval(()=>{const ghost=window.__OFFICE_DEBUG__.snapshot().issues.find(issue=>issue.id==='nginx');window.__qaGhostSamples.push({position:ghost.position,scale:ghost.scale});},100);
  });
@@ -90,6 +91,19 @@ try{
  assert.ok(ghostSamples.length>40);
  assert.ok(ghostSamples.every(sample=>sample.position[1]>.1&&sample.scale.every(value=>value===1)),'ghost touched the floor or squashed like a slime');
  assert.ok(Math.max(...ghostSamples.map(sample=>sample.position[0]))-Math.min(...ghostSamples.map(sample=>sample.position[0]))>5,'ghost never approached the defense line');
+ const battleSamples=await page.evaluate(()=>{clearInterval(window.__qaBattleTimer);return window.__qaBattleSamples;});
+ const guards=battleSamples.filter(s=>s.battle?.type==='breath'&&s.battle.age>=.55&&s.battle.age<2.04);
+ const attacks=battleSamples.filter(s=>s.battle?.type==='melee'&&s.battle.age>=1.1&&s.battle.age<1.7);
+ assert.ok(guards.length>10&&attacks.length>10,'missing action samples');
+ for(const sample of guards){
+  assert.ok(sample.battle.shieldRaised);assert.deepEqual(sample.bubbles.map(b=>[b.actor,b.text]),[['hero','방어!']]);
+ }
+ for(const sample of attacks){
+  assert.ok(sample.battle.attacking);assert.deepEqual(sample.bubbles.map(b=>[b.actor,b.text]),[['hero','공격!']]);
+ }
+ assert.ok(battleSamples.every(s=>s.bubbles.length<=1));
+ assert.ok(battleSamples.filter(s=>!s.battle).every(s=>s.bubbles.every(b=>!b.battle)),'combat cue survived the action');
+ record('attack and defense cues match sword and shield phases, override dialogue, and clear after combat');
  record('Kenney ghost floats through approach and knockback without slime squash',{samples:ghostSamples.length,minimumHeight:Math.min(...ghostSamples.map(sample=>sample.position[1]))});
  const secondBuckets=Array.from({length:9},(_,i)=>frameTimes.filter(t=>t>=frameTimes[0]+i*1000&&t<frameTimes[0]+(i+1)*1000).length);
  const minimumOneSecondFPS=Math.min(...secondBuckets);

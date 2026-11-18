@@ -31,11 +31,12 @@ try{
  record('at most one automatic bubble, with gaps and no queued old messages');
  await page.locator('[data-inspect="crew-6"]').click();
  assert.match((await bubbles(page))[0],/일정 독려/);
- await page.waitForTimeout(1800);
- assert.match((await bubbles(page))[0],/일정 독려/,'automatic speech interrupted the selected character');
+ await page.waitForFunction(()=>{const s=window.__OFFICE_DEBUG__.snapshot();return s.battle?.shieldRaised&&s.bubbles.some(b=>b.text==='방어!');});
+ assert.deepEqual(await bubbles(page),['방어!']);
+ await page.locator('.scene-panel').screenshot({path:'test-results/combat-defense-desktop.png'});
  await page.locator('[data-inspect="pet"]').click();
  assert.deepEqual(await bubbles(page),['삐빅']);
- record('explicit selection immediately replaces speech and remains readable during combat');
+ record('selection displays immediately, while the next defense action takes priority on time');
  await page.emulateMedia({reducedMotion:'reduce'});await page.waitForTimeout(100);
  const frozen=await snap(page),fixedText=await bubbles(page);await page.waitForTimeout(300);
  assert.equal((await snap(page)).frames,frozen.frames);assert.deepEqual(await bubbles(page),fixedText);
