@@ -96,14 +96,14 @@ try{
  const attacks=battleSamples.filter(s=>s.battle?.type==='melee'&&s.battle.age>=1.1&&s.battle.age<1.7);
  assert.ok(guards.length>10&&attacks.length>10,'missing action samples');
  for(const sample of guards){
-  assert.ok(sample.battle.shieldRaised);assert.deepEqual(sample.bubbles.map(b=>[b.actor,b.text]),[['hero','방어!']]);
+  assert.ok(sample.battle.shieldRaised);assert.deepEqual(sample.bubbles.filter(b=>b.battle).map(b=>[b.actor,b.text]),[['hero','방어!']]);
  }
  for(const sample of attacks){
-  assert.ok(sample.battle.attacking);assert.deepEqual(sample.bubbles.map(b=>[b.actor,b.text]),[['hero','공격!']]);
+  assert.ok(sample.battle.attacking);assert.deepEqual(sample.bubbles.filter(b=>b.battle).map(b=>[b.actor,b.text]),[['hero','공격!']]);
  }
- assert.ok(battleSamples.every(s=>s.bubbles.length<=1));
+ assert.ok(battleSamples.every(s=>s.bubbles.filter(b=>b.battle).length<=1&&s.bubbles.filter(b=>!b.battle).length<=1));
  assert.ok(battleSamples.filter(s=>!s.battle).every(s=>s.bubbles.every(b=>!b.battle)),'combat cue survived the action');
- record('attack and defense cues match sword and shield phases, override dialogue, and clear after combat');
+ record('attack and defense cues match sword and shield phases, coexist with dialogue, and clear after combat');
  record('Kenney ghost floats through approach and knockback without slime squash',{samples:ghostSamples.length,minimumHeight:Math.min(...ghostSamples.map(sample=>sample.position[1]))});
  const secondBuckets=Array.from({length:9},(_,i)=>frameTimes.filter(t=>t>=frameTimes[0]+i*1000&&t<frameTimes[0]+(i+1)*1000).length);
  const minimumOneSecondFPS=Math.min(...secondBuckets);
@@ -237,6 +237,19 @@ try{
  await screenshot(invasion.page,'java4shell-mobile');
  await invasion.context.close();
  record('java4shell dragon reopens the rift and attacks; three graves and published history remain intact');
+ const conversationMobile=await openPage({width:390,height:844});
+ await conversationMobile.page.waitForFunction(()=>{const s=window.__OFFICE_DEBUG__.snapshot();return s.battle?.shieldRaised&&s.bubbles.length===2;});
+ const bubbleBoxes=await conversationMobile.page.locator('.bubble:not([hidden])').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom};}));
+ assert.equal(bubbleBoxes.length,2);
+ const [a,b]=bubbleBoxes;
+ assert.ok(Math.min(a.right,b.right)<=Math.max(a.left,b.left)||Math.min(a.bottom,b.bottom)<=Math.max(a.top,b.top),'mobile conversation overlaps defense');
+ assert.ok(bubbleBoxes.every(b=>b.left>=0&&b.right<=390),'mobile conversation clipped horizontally');
+ await noOverflow(conversationMobile.page);await screenshot(conversationMobile.page,'dialogue-and-defense-mobile');
+ await conversationMobile.page.emulateMedia({reducedMotion:'reduce'});
+ await conversationMobile.page.waitForFunction(()=>window.__OFFICE_DEBUG__.snapshot().reduced);
+ assert.ok((await snapshot(conversationMobile.page)).bubbles.every(b=>!b.battle));
+ await conversationMobile.context.close();
+ record('mobile team conversation and defense remain readable together and combat clears in reduced motion');
  assert.deepEqual(errors,[]);record('zero console errors, page errors and HTTP errors in all scenarios');
  await writeFile('test-results/browser-report.json',JSON.stringify({date:new Date().toISOString(),url:base,browser:browser.version(),checks,errors},null,2));
 }catch(error){

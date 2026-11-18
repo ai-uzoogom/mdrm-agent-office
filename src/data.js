@@ -33,7 +33,7 @@ export const CREW = [
   { role: '빌드·검수', shirt: '#e5873a', screen: '#f6a050', statuses: peaceful ? ['빌드 통과', '릴리스 기록 정리', '발행 완료'] : ['검증 빌드 준비', '테스트 빌드 중', '확인 필요', '검수 결과 정리'] },
   { role: '릴리스 관리', shirt: '#c8503a', walker: true, stops: peaceful ? ['발행 기록 정리', '릴리스 기록 점검'] : [NEXT_RELEASE ? `v${NEXT_RELEASE.ver} 일정 점검` : '패치 일정 미정', '검증 결과 취합'] },
   { role: '운영 지원', shirt: '#e8b84a', walker: true, stops: peaceful ? ['커피 타임', '커피 내리는 중', '잠깐 산책', '자리 복귀'] : ['대응팀 커피 배달', '커피 내리는 중', '운영 상태 확인', '상황 공유 중'] },
-  { role: '일정 독려', shirt: '#f5c542', walker: true, behavior: 'encourage', stops: peaceful ? ['모두 수고했어요', '패치 기록 정리해요', '커피 한잔하고 가요'] : ['영향 범위 확인됐나요?', '수정안 함께 볼까요?', '검증 결과 공유해요'] },
+  { role: '일정 독려', shirt: '#f5c542', walker: true, behavior: 'encourage', stops: peaceful ? ['모두 수고했어요', '패치 기록 정리해요', '커피 한잔하고 가요'] : ['좋아요, 함께 풀어봐요', '차근차근 확인해요', '수고 많아요, 힘내요'] },
 ];
 export const MEETING_STATUSES = peaceful
   ? ['발행 기록 정리', '기존 패치 회고', '운영 상태 점검']

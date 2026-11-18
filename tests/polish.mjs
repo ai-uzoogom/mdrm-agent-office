@@ -6,7 +6,7 @@ const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'/A
 const checks=[],errors=[];
 const record=name=>{checks.push(name);console.log('PASS',name);};
 const snap=page=>page.evaluate(()=>window.__OFFICE_DEBUG__.snapshot());
-const bubbles=page=>page.locator('.bubble:not([hidden])').allTextContents();
+const bubbles=page=>page.locator('.bubble:not(.battle-pop):not([hidden])').allTextContents();
 await mkdir('test-results',{recursive:true});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:1000}});
@@ -20,23 +20,36 @@ try{
  assert.match((await bubbles(page))[0],/java4shell 분석/);
  await page.evaluate(()=>{
   window.speechSamples=[];
-  window.speechSampler=setInterval(()=>window.speechSamples.push([...document.querySelectorAll('.bubble:not([hidden])')].map(el=>el.textContent)),20);
+  window.speechSampler=setInterval(()=>window.speechSamples.push(window.__OFFICE_DEBUG__.snapshot()),20);
  });
- await page.waitForTimeout(10000);
+ await page.waitForTimeout(24000);
  const samples=await page.evaluate(()=>{clearInterval(window.speechSampler);return window.speechSamples;});
- assert.ok(samples.every(items=>items.length<=1),'simultaneous speech bubbles');
- assert.ok(samples.some(items=>items.length===0),'missing breathing space between messages');
- assert.ok(new Set(samples.flat()).size>=2,'automatic dialogue did not advance');
- assert.equal(first.viewport.height,(await snap(page)).viewport.height);
- record('at most one automatic bubble, with gaps and no queued old messages');
+ assert.ok(samples.every(s=>s.bubbles.filter(b=>!b.battle).length<=1&&s.bubbles.filter(b=>b.battle).length<=1),'too many messages in one area');
+ assert.ok(samples.some(s=>s.bubbles.length===2),'combat still prevents team dialogue');
+ const spoken=samples.map(s=>s.bubbles.find(b=>!b.battle)).filter(Boolean);
+ assert.ok(new Set(spoken.map(b=>b.actor)).size>=6,'team speakers are not taking turns');
+ const after=await snap(page);
+ assert.ok(after.metrics.teamSpeech-first.metrics.teamSpeech>=6,'team dialogue is too infrequent');
+ assert.ok(after.metrics.encouragementSpeech-first.metrics.encouragementSpeech>=2,'encouragement is too infrequent');
+ // All automatic lines get their full reading time, including during combat.
+ const runs=[];
+ for(const s of samples){
+  const message=s.bubbles.find(b=>!b.battle),key=message?`${message.actor}:${message.text}`:null;
+  if(key!==runs.at(-1)?.key)runs.push({key,start:s.elapsed,end:s.elapsed});
+  else runs.at(-1).end=s.elapsed;
+ }
+ for(const run of runs.slice(1,-1).filter(r=>r.key))assert.ok(run.end-run.start>=2.65,'combat cut a team line short');
+ assert.equal(first.viewport.height,after.viewport.height);
+ record('24 seconds: at least six team lines, two encouragements, full reading time, one conversation plus one combat cue');
  await page.locator('[data-inspect="crew-6"]').click();
  assert.match((await bubbles(page))[0],/일정 독려/);
  await page.waitForFunction(()=>{const s=window.__OFFICE_DEBUG__.snapshot();return s.battle?.shieldRaised&&s.bubbles.some(b=>b.text==='방어!');});
- assert.deepEqual(await bubbles(page),['방어!']);
- await page.locator('.scene-panel').screenshot({path:'test-results/combat-defense-desktop.png'});
+ assert.deepEqual(await page.locator('.battle-pop:not([hidden])').allTextContents(),['방어!']);
+ assert.match((await bubbles(page))[0],/일정 독려/,'defense interrupted the selected conversation');
+ await page.locator('.scene-panel').screenshot({path:'test-results/team-dialogue-defense-desktop.png'});
  await page.locator('[data-inspect="pet"]').click();
  assert.deepEqual(await bubbles(page),['삐빅']);
- record('selection displays immediately, while the next defense action takes priority on time');
+ record('selected conversation stays readable while defense displays on time');
  await page.emulateMedia({reducedMotion:'reduce'});await page.waitForTimeout(100);
  const frozen=await snap(page),fixedText=await bubbles(page);await page.waitForTimeout(300);
  assert.equal((await snap(page)).frames,frozen.frames);assert.deepEqual(await bubbles(page),fixedText);
@@ -84,7 +97,7 @@ try{
    await page.locator(`#tab-${tab}`).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   }
   await page.locator('#tab-history').click();await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
-  if(width===1440||width===390)await page.screenshot({path:`test-results/hover-speech-${width}.png`,fullPage:true});
+  if(width===1440||width===390)await page.screenshot({path:`test-results/team-dialogue-${width}.png`,fullPage:true});
  }
  record('12px secondary text, 44px rows, all tabs and seven desktop/mobile sizes fit');
  await page.setViewportSize({width:390,height:844});
@@ -92,7 +105,7 @@ try{
  assert.equal((await snap(page)).floor,'basement');
  assert.ok(await page.locator('button[data-floor="basement"]').evaluate(el=>getComputedStyle(el).outlineStyle==='solid'));
  assert.equal(await page.locator('.bubble:not([hidden])').evaluateAll(els=>els.filter(el=>getComputedStyle(el).visibility!=='hidden').length),0);
- await page.locator('.scene-panel').screenshot({path:'test-results/hover-speech-basement.png'});
+ await page.locator('.scene-panel').screenshot({path:'test-results/team-dialogue-basement.png'});
  await page.locator('button[data-floor="office"]').click();assert.equal((await snap(page)).floor,'office');
  record('keyboard floor selection has visible focus; basement hides office bubbles');
  const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
@@ -103,7 +116,7 @@ try{
  assert.match((await bubbles(mobile))[0],/운영 지원/);
  assert.equal(await mobile.locator('.hover-label').evaluateAll(els=>els.filter(el=>getComputedStyle(el).visibility!=='hidden').length),0);
  await mobile.locator('#office-canvas').scrollIntoViewIfNeeded();
- await mobile.locator('.scene-panel').screenshot({path:'test-results/hover-speech-touch.png'});
+ await mobile.locator('.scene-panel').screenshot({path:'test-results/team-dialogue-touch.png'});
  await mobile.close();
  record('mobile tap still opens character details without sticky hover signs or multiple bubbles');
  assert.deepEqual(errors,[]);record('zero page, console and HTTP errors');

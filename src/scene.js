@@ -5,6 +5,7 @@ import { attachDisplay } from './displays.js';
 
 const PALETTE={ wall:'#4a4383', partition:'#6a63a8', wood:['#b07c4c','#a06e42'], meeting:['#4d6199','#45578c'], server:['#323e60','#2b3654'] };
 const VIEW={min:1,max:3,step:.25};
+const SPEECH={duration:2.8,gap:.7,encourageEvery:3};
 const lerp=THREE.MathUtils.lerp, ease=t=>t*t*(3-2*t), random=(a,b)=>a+Math.random()*(b-a);
 export class OfficeScene {
   constructor({canvas,stage,overlay,onLog,onCrew,onView=()=>{},onMotion,onReady,onGrave,onFloor=()=>{}}) {
@@ -13,12 +14,12 @@ export class OfficeScene {
     this.patches = patchRecords();
     this.peaceful = this.active.length === 0;
     this.graves = [];
-    this.activeBubble=null;this.nextBubbleAt=0;this.hoverPointer=null;this.hoveredActorKey=null;
+    this.activeBubble=null;this.activeBattleBubble=null;this.speechTurn=0;this.speakerCursor=1;this.encouragementIndex=0;this.nextBubbleAt=0;this.hoverPointer=null;this.hoveredActorKey=null;
     this.floor = 'office';this.floorProgress=0;this.floorRaf=null;this.floorTransition=null;
     this.floorViews={office:{zoom:1,pan:[0,0]},basement:{zoom:1.25,pan:[0,0]}};
     this.meetingStatusIndex = 0;
     this.meetingStatus = MEETING_STATUSES[0];
-    this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0,encourage:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.surfaceLabels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.displays=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
+    this.elapsed=0;this.frameCount=0;this.metrics={walk:0,typing:0,led:0,melee:0,breath:0,combat:0,encourage:0,teamSpeech:0,encouragementSpeech:0};this.actors=[];this.obstacles=[];this.targets=[];this.labels=[];this.surfaceLabels=[];this.bubbles=[];this.monsters=[];this.leds=[];this.displays=[];this.crewActors=[];this.mixers=[];this.clickHandlers=new Map();this.assets=null;
     this.motionQuery=matchMedia('(prefers-reduced-motion: reduce)');this.reduced=this.motionQuery.matches;this.pointer=new THREE.Vector2();this.raycaster=new THREE.Raycaster();this.projectVector=new THREE.Vector3();this.raf=null;this.ready=false;this.battleCursor=2;
     this.nextCrew=1.6;this.nextLed=.4;this.nextCode=.13;this.nextBattle=1.8;this.nextMeeting=5;this.lastCalendar=0;
     this.zoom=VIEW.min;this.viewPan=new THREE.Vector2();this.viewFit=null;this.drag=null;this.touchGesture=null;this.suppressClick=false;
@@ -135,7 +136,7 @@ export class OfficeScene {
       }
       this.crewActors.push(actor);this.register(actor,`crew-${i}`,()=>`${person.role} · ${actor.status}`);
       this.label('name-label',person.role,actor.root,5.15);
-      this.onCrew(i,actor.status);this.bubble(actor,actor.status,4.5,{fixed:this.reduced});
+      this.onCrew(i,actor.status);this.bubble(actor,actor.status,SPEECH.duration,{fixed:this.reduced});
     });
     const meeting=mini(1,'#5263a4',4.5);this.scene.add(meeting.root);seatAtKeyboard(meeting,{x:18,z:-4.2,seatY:1.85,keyY:2.68,keyZ:-5.85,spread:.48,phase:2.1,frontEdge:new THREE.Box3().setFromObject(this.meetingTable).max.z});this.meetingChair.position.z=meeting.root.position.z;this.mixers.push(meeting.mixer);this.meeting=meeting;
     this.register(meeting,'meeting',()=>`v${NEXT_RELEASE?.ver ?? PRODUCT.current} · ${this.meetingStatus}`);
@@ -312,16 +313,31 @@ export class OfficeScene {
     const corners=[[-width/2,height/2,0],[width/2,height/2,0],[-width/2,-height/2,0]].map(p=>new THREE.Vector3(...p));
     this.overlay.append(el);this.surfaceLabels.push({el,anchor,corners,pixelWidth,pixelHeight,point:new THREE.Vector3()});return el;
   }
-  bubble(actor,text,duration=3,{fixed=false,battle=false,priority=false}={}){
-    // Ordinary dialogue never queues; combat cues must appear on their action frame.
+  bubble(actor,text,duration=SPEECH.duration,{fixed=false,battle=false,priority=false}={}){
+    // One readable conversation and one immediate action cue, without a backlog.
     if(!priority&&!battle&&(this.activeBubble?.fixed||this.elapsed<this.nextBubbleAt))return;
-    if(this.activeBubble)this.activeBubble.el.hidden=true;
-    let entry=this.bubbles.find(b=>b.actor===actor);
+    const slot=battle?'activeBattleBubble':'activeBubble';
+    if(this[slot])this[slot].el.hidden=true;
+    let entry=this.bubbles.find(b=>b.actor===actor&&b.battle===battle);
     if(!entry){const el=document.createElement('div');el.className='overlay bubble';el.dataset.actor=actor.key;this.overlay.append(el);entry={el,actor,target:actor.root,height:(actor.height??4.5)+2.4};this.bubbles.push(entry);}
     entry.el.textContent=text;entry.el.hidden=false;entry.until=this.elapsed+duration;entry.fixed=fixed||this.reduced;entry.battle=battle;
-    this.activeBubble=entry;this.nextBubbleAt=this.elapsed+duration+.65;
+    this[slot]=entry;if(!battle)this.nextBubbleAt=this.elapsed+duration+SPEECH.gap;
     const color=/확인 필요/.test(text)?'#f6a050':/커밋|통과|완료/.test(text)?'#4fd16b':battle||actor.data?.behavior==='encourage'?'#f5c542':'#f4efe0';entry.el.style.setProperty('--bubble-color',color);entry.el.classList.toggle('battle-pop',battle);
     if(this.ready&&(this.reduced||document.hidden))this.render();
+  }
+  speakTeam(){
+    if(this.activeBubble?.fixed||this.elapsed<this.nextBubbleAt)return;
+    const encourage=this.speechTurn++%SPEECH.encourageEvery===SPEECH.encourageEvery-1;
+    const speakers=[...this.crewActors.filter(a=>a.data.behavior!=='encourage'),this.meeting];
+    const actor=encourage?this.crewActors.find(a=>a.data.behavior==='encourage'):speakers[this.speakerCursor++%speakers.length];
+    if(encourage){
+      actor.status=actor.data.stops[this.encouragementIndex++%actor.data.stops.length];
+      actor.wait=Math.max(actor.wait,SPEECH.duration);
+      this.onCrew(actor.index,actor.status);this.metrics.encouragementSpeech++;
+      this.onLog(`${actor.data.role} · ${actor.status}`,'special');
+    }
+    this.bubble(actor,actor===this.meeting?this.meetingStatus:actor.status);
+    this.metrics.teamSpeech++;
   }
   describe(actor){
     if(actor.switchFloor){this.selectFloor(actor.switchFloor);return;}
@@ -411,7 +427,7 @@ export class OfficeScene {
       if(this.reduced)this.resetBattle();
       if(this.activeBubble&&!this.activeBubble.el.hidden){
         this.activeBubble.fixed=this.reduced;this.activeBubble.until=this.elapsed+3;
-        this.nextBubbleAt=this.elapsed+3.65;
+        this.nextBubbleAt=this.elapsed+3+SPEECH.gap;
       }
       this.updateMotion();
     });
@@ -513,7 +529,7 @@ export class OfficeScene {
       }
     });
     this.meeting.setTypingPose(t,this.meetingStatus);
-    if(t>=this.nextCrew){this.nextCrew=t+random(1.6,2.8);const actor=this.crewActors[Math.floor(Math.random()*4)];actor.statusIndex=(actor.statusIndex+1)%actor.data.statuses.length;actor.status=actor.data.statuses[actor.statusIndex];this.onCrew(actor.index,actor.status);this.bubble(actor,actor.status);this.onLog(`${actor.data.role} · ${actor.status}`,/확인 필요/.test(actor.status)?'warn':/커밋|통과/.test(actor.status)?'good':'');}
+    if(t>=this.nextCrew){this.nextCrew=t+random(1.6,2.8);const actor=this.crewActors[Math.floor(Math.random()*4)];actor.statusIndex=(actor.statusIndex+1)%actor.data.statuses.length;actor.status=actor.data.statuses[actor.statusIndex];this.onCrew(actor.index,actor.status);this.onLog(`${actor.data.role} · ${actor.status}`,/확인 필요/.test(actor.status)?'warn':/커밋|통과/.test(actor.status)?'good':'');}
     if(t>=this.nextCode){this.nextCode=t+.14;this.crewActors.forEach(actor=>actor.display?.update(t,actor.status));this.meetingDisplay.update(t,this.meetingStatus);}
     if (t >= this.nextLed) {
       this.nextLed = t + .4;
@@ -526,7 +542,7 @@ export class OfficeScene {
         led.material.emissiveIntensity = Math.random() > .12 ? 1.4 : .15;
       }
     }
-    if(t>=this.nextMeeting){this.nextMeeting=t+random(6,9);this.meetingStatusIndex=(this.meetingStatusIndex+1)%MEETING_STATUSES.length;this.meetingStatus=MEETING_STATUSES[this.meetingStatusIndex];this.bubble(this.meeting,this.meetingStatus);this.onLog(`회의실 · ${this.meetingStatus}`);}
+    if(t>=this.nextMeeting){this.nextMeeting=t+random(6,9);this.meetingStatusIndex=(this.meetingStatusIndex+1)%MEETING_STATUSES.length;this.meetingStatus=MEETING_STATUSES[this.meetingStatusIndex];this.onLog(`회의실 · ${this.meetingStatus}`);}
     if (this.riftCore) {
       this.riftCore.material.emissiveIntensity=1.2+Math.sin(t*2.8)*.6;
       this.riftAura.material.opacity=.12+(Math.sin(t*2.8)+1)*.06;
@@ -535,6 +551,7 @@ export class OfficeScene {
     for(const actor of this.monsters){
       if(actor!==this.battle?.actor){if(actor.kind==='ghost')actor.root.position.y=actor.home.y+Math.sin(t*2+actor.home.z)*.18;if(actor.kind==='dragon')actor.wings.forEach((w,i)=>w.rotation.z=Math.sin(t*2)*.06*(i?1:-1));}
     }
+    this.speakTeam();
     if(!this.battle&&this.monsters.length&&t>=this.nextBattle)this.startBattle();
     if(this.battle)this.updateBattle();
     this.bubbles.forEach(b=>{if(!b.fixed&&t>b.until)b.el.hidden=true;});
@@ -543,7 +560,7 @@ export class OfficeScene {
   walk(actor,dt){
     if(actor.wait>0){actor.wait-=dt;actor.setAction('idle');return;}
     actor.setAction('walk');const next=actor.path[actor.pathIndex],dx=next.x-actor.root.position.x,dz=next.z-actor.root.position.z,distance=Math.hypot(dx,dz),step=2.4*dt;
-    if(distance<=step){actor.root.position.x=next.x;actor.root.position.z=next.z;actor.pathIndex=(actor.pathIndex+1)%actor.path.length;if(next.stop!==undefined){actor.wait=1.8;actor.status=actor.data.stops[next.stop];if(next.face!==undefined)actor.root.rotation.y=next.face;if(actor.data.behavior==='encourage')this.metrics.encourage++;this.onCrew(actor.index,actor.status);this.bubble(actor,actor.status);this.onLog(`${actor.data.role} · ${actor.status}`,actor.data.behavior==='encourage'?'special':'');}return;}
+    if(distance<=step){actor.root.position.x=next.x;actor.root.position.z=next.z;actor.pathIndex=(actor.pathIndex+1)%actor.path.length;if(next.stop!==undefined){actor.wait=1.8;actor.status=actor.data.stops[next.stop];if(next.face!==undefined)actor.root.rotation.y=next.face;if(actor.data.behavior==='encourage')this.metrics.encourage++;this.onCrew(actor.index,actor.status);this.onLog(`${actor.data.role} · ${actor.status}`,actor.data.behavior==='encourage'?'special':'');}return;}
     actor.root.position.x+=dx/distance*step;actor.root.position.z+=dz/distance*step;actor.root.rotation.y=Math.atan2(dx,dz);this.metrics.walk++;
   }
   startBattle(){
@@ -579,7 +596,7 @@ export class OfficeScene {
     actor.root.traverse(n=>{if(!n.isMesh)return;const list=Array.isArray(n.material)?n.material:[n.material];list.forEach(m=>{if(!m.emissive)return;if(active){if(!m.userData.savedFlash)m.userData.savedFlash={color:m.emissive.clone(),intensity:m.emissiveIntensity};m.emissive.set('#ffffff');m.emissiveIntensity=2;}else if(m.userData.savedFlash){m.emissive.copy(m.userData.savedFlash.color);m.emissiveIntensity=m.userData.savedFlash.intensity;delete m.userData.savedFlash;}});});
   }
   resetBattle(){
-    if(this.activeBubble?.battle&&!this.activeBubble.el.hidden){this.activeBubble.el.hidden=true;this.nextBubbleAt=this.elapsed+.65;}
+    if(this.activeBattleBubble)this.activeBattleBubble.el.hidden=true;
     if(this.battle){const actor=this.battle.actor;actor.root.position.copy(actor.home);actor.root.scale.copy(actor.baseScale);actor.root.rotation.y=-Math.PI/2;actor.setAction?.('idle');if(actor.club)actor.club.rotation.z=-.22;this.flash(actor,false);}
     if(this.hero){this.hero.root.position.copy(this.hero.home);this.hero.setEquipmentPose();}
     if(this.sparks)this.sparks.visible=false;if(this.flame)this.flame.visible=false;this.battle=null;
