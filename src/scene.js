@@ -5,7 +5,7 @@ import { attachDisplay } from './displays.js';
 
 const PALETTE={ wall:'#4a4383', partition:'#6a63a8', wood:['#b07c4c','#a06e42'], meeting:['#4d6199','#45578c'], server:['#323e60','#2b3654'] };
 const VIEW={min:1,max:3,step:.25};
-const SPEECH={duration:2.8,gap:.7,encourageEvery:3};
+const SPEECH={duration:2.8,maxSpeakers:3,minInterval:.9,maxInterval:1.8};
 const lerp=THREE.MathUtils.lerp, ease=t=>t*t*(3-2*t), random=(a,b)=>a+Math.random()*(b-a);
 export class OfficeScene {
   constructor({canvas,stage,overlay,onLog,onCrew,onView=()=>{},onMotion,onReady,onGrave,onFloor=()=>{}}) {
@@ -14,7 +14,7 @@ export class OfficeScene {
     this.patches = patchRecords();
     this.peaceful = this.active.length === 0;
     this.graves = [];
-    this.activeBubble=null;this.activeBattleBubble=null;this.speechTurn=0;this.speakerCursor=1;this.encouragementIndex=0;this.nextBubbleAt=0;this.hoverPointer=null;this.hoveredActorKey=null;
+    this.activeBattleBubble=null;this.lastSpeaker=null;this.encouragementIndex=0;this.nextBubbleAt=random(SPEECH.minInterval,SPEECH.maxInterval);this.nextEncourageAt=random(8,11);this.hoverPointer=null;this.hoveredActorKey=null;
     this.floor = 'office';this.floorProgress=0;this.floorRaf=null;this.floorTransition=null;
     this.floorViews={office:{zoom:1,pan:[0,0]},basement:{zoom:1.25,pan:[0,0]}};
     this.meetingStatusIndex = 0;
@@ -314,29 +314,43 @@ export class OfficeScene {
     this.overlay.append(el);this.surfaceLabels.push({el,anchor,corners,pixelWidth,pixelHeight,point:new THREE.Vector3()});return el;
   }
   bubble(actor,text,duration=SPEECH.duration,{fixed=false,battle=false,priority=false}={}){
-    // One readable conversation and one immediate action cue, without a backlog.
-    if(!priority&&!battle&&(this.activeBubble?.fixed||this.elapsed<this.nextBubbleAt))return;
-    const slot=battle?'activeBattleBubble':'activeBubble';
-    if(this[slot])this[slot].el.hidden=true;
+    for(const b of this.bubbles)if(!b.fixed&&this.elapsed>=b.until)b.el.hidden=true;
+    const conversations=this.bubbles.filter(b=>!b.battle&&!b.el.hidden);
     let entry=this.bubbles.find(b=>b.actor===actor&&b.battle===battle);
+    if(battle){
+      if(this.activeBattleBubble)this.activeBattleBubble.el.hidden=true;
+    }else if(!priority){
+      if((!this.ready&&conversations.length)||conversations.length>=SPEECH.maxSpeakers||conversations.some(b=>b.actor===actor))return false;
+    }else if(!entry||entry.el.hidden){
+      // A deliberate selection can replace the message nearest to expiry.
+      if(conversations.length>=SPEECH.maxSpeakers)conversations.sort((a,b)=>a.until-b.until)[0].el.hidden=true;
+    }
     if(!entry){const el=document.createElement('div');el.className='overlay bubble';el.dataset.actor=actor.key;this.overlay.append(el);entry={el,actor,target:actor.root,height:(actor.height??4.5)+2.4};this.bubbles.push(entry);}
     entry.el.textContent=text;entry.el.hidden=false;entry.until=this.elapsed+duration;entry.fixed=fixed||this.reduced;entry.battle=battle;
-    this[slot]=entry;if(!battle)this.nextBubbleAt=this.elapsed+duration+SPEECH.gap;
+    if(battle)this.activeBattleBubble=entry;
     const color=/확인 필요/.test(text)?'#f6a050':/커밋|통과|완료/.test(text)?'#4fd16b':battle||actor.data?.behavior==='encourage'?'#f5c542':'#f4efe0';entry.el.style.setProperty('--bubble-color',color);entry.el.classList.toggle('battle-pop',battle);
     if(this.ready&&(this.reduced||document.hidden))this.render();
+    return true;
   }
   speakTeam(){
-    if(this.activeBubble?.fixed||this.elapsed<this.nextBubbleAt)return;
-    const encourage=this.speechTurn++%SPEECH.encourageEvery===SPEECH.encourageEvery-1;
-    const speakers=[...this.crewActors.filter(a=>a.data.behavior!=='encourage'),this.meeting];
-    const actor=encourage?this.crewActors.find(a=>a.data.behavior==='encourage'):speakers[this.speakerCursor++%speakers.length];
+    if(this.reduced||this.elapsed<this.nextBubbleAt)return;
+    const speaking=this.bubbles.filter(b=>!b.battle&&!b.el.hidden&&(b.fixed||b.until>this.elapsed));
+    if(speaking.length>=SPEECH.maxSpeakers)return;
+    const available=[...this.crewActors,this.meeting].filter(a=>!speaking.some(b=>b.actor===a));
+    const encourager=available.find(a=>a.data?.behavior==='encourage');
+    const encourage=encourager&&this.elapsed>=this.nextEncourageAt;
+    const candidates=available.filter(a=>a.data?.behavior!=='encourage'&&a!==this.lastSpeaker);
+    const actor=encourage?encourager:candidates[Math.floor(Math.random()*candidates.length)];
+    if(!actor)return;
     if(encourage){
       actor.status=actor.data.stops[this.encouragementIndex++%actor.data.stops.length];
       actor.wait=Math.max(actor.wait,SPEECH.duration);
       this.onCrew(actor.index,actor.status);this.metrics.encouragementSpeech++;
+      this.nextEncourageAt=this.elapsed+random(8,11);
       this.onLog(`${actor.data.role} · ${actor.status}`,'special');
     }
     this.bubble(actor,actor===this.meeting?this.meetingStatus:actor.status);
+    this.lastSpeaker=actor;this.nextBubbleAt=this.elapsed+random(SPEECH.minInterval,SPEECH.maxInterval);
     this.metrics.teamSpeech++;
   }
   describe(actor){
@@ -425,10 +439,10 @@ export class OfficeScene {
     this.motionQuery.addEventListener('change',event=>{
       this.reduced=event.matches;
       if(this.reduced)this.resetBattle();
-      if(this.activeBubble&&!this.activeBubble.el.hidden){
-        this.activeBubble.fixed=this.reduced;this.activeBubble.until=this.elapsed+3;
-        this.nextBubbleAt=this.elapsed+3+SPEECH.gap;
+      for(const bubble of this.bubbles.filter(b=>!b.battle&&!b.el.hidden)){
+        bubble.fixed=this.reduced;bubble.until=this.elapsed+3;
       }
+      this.nextBubbleAt=this.elapsed+random(SPEECH.minInterval,SPEECH.maxInterval);
       this.updateMotion();
     });
     this.canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();if(this.raf)cancelAnimationFrame(this.raf);this.raf=null;this.onMotion('그래픽 연결이 중단되었습니다');});

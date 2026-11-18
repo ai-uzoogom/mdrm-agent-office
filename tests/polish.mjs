@@ -22,38 +22,45 @@ try{
   window.speechSamples=[];
   window.speechSampler=setInterval(()=>window.speechSamples.push(window.__OFFICE_DEBUG__.snapshot()),20);
  });
- await page.waitForTimeout(24000);
+ await page.waitForTimeout(30000);
  const samples=await page.evaluate(()=>{clearInterval(window.speechSampler);return window.speechSamples;});
- assert.ok(samples.every(s=>s.bubbles.filter(b=>!b.battle).length<=1&&s.bubbles.filter(b=>b.battle).length<=1),'too many messages in one area');
- assert.ok(samples.some(s=>s.bubbles.length===2),'combat still prevents team dialogue');
- const spoken=samples.map(s=>s.bubbles.find(b=>!b.battle)).filter(Boolean);
- assert.ok(new Set(spoken.map(b=>b.actor)).size>=6,'team speakers are not taking turns');
+ const ordinary=s=>s.bubbles.filter(b=>!b.battle);
+ assert.ok(samples.every(s=>ordinary(s).length<=3&&s.bubbles.filter(b=>b.battle).length<=1),'speaker cap exceeded');
+ assert.ok(samples.every(s=>new Set(ordinary(s).map(b=>b.actor)).size===ordinary(s).length),'same actor speaking twice');
+ assert.ok(samples.some(s=>ordinary(s).length===3),'never reached three speakers');
+ assert.ok(samples.some(s=>ordinary(s).length<3),'speaker count never varies');
+ const actors=new Set(samples.flatMap(s=>ordinary(s).map(b=>b.actor)));
+ assert.ok(actors.size>=4,'too few different speakers');
  const after=await snap(page);
- assert.ok(after.metrics.teamSpeech-first.metrics.teamSpeech>=6,'team dialogue is too infrequent');
- assert.ok(after.metrics.encouragementSpeech-first.metrics.encouragementSpeech>=2,'encouragement is too infrequent');
- // All automatic lines get their full reading time, including during combat.
- const runs=[];
- for(const s of samples){
-  const message=s.bubbles.find(b=>!b.battle),key=message?`${message.actor}:${message.text}`:null;
-  if(key!==runs.at(-1)?.key)runs.push({key,start:s.elapsed,end:s.elapsed});
-  else runs.at(-1).end=s.elapsed;
+ assert.ok(after.metrics.teamSpeech-first.metrics.teamSpeech>=12,'random conversations too infrequent');
+ assert.ok(after.metrics.encouragementSpeech-first.metrics.encouragementSpeech>=2,'encouragement missing');
+ const starts=[];
+ for(const actor of actors){
+  const runs=[];
+  for(const s of samples){
+   const message=ordinary(s).find(b=>b.actor===actor),key=message?.text??null;
+   if(key!==runs.at(-1)?.key){runs.push({key,start:s.elapsed,end:s.elapsed});if(key)starts.push(s.elapsed);}
+   else runs.at(-1).end=s.elapsed;
+  }
+  for(const run of runs.filter(r=>r.key&&r.start>samples[0].elapsed+.1&&r.end<samples.at(-1).elapsed-.1))assert.ok(run.end-run.start>=2.65,'conversation cut short');
  }
- for(const run of runs.slice(1,-1).filter(r=>r.key))assert.ok(run.end-run.start>=2.65,'combat cut a team line short');
+ starts.sort((a,b)=>a-b);const intervals=starts.slice(1).map((t,i)=>t-starts[i]);
+ assert.ok(Math.max(...intervals)-Math.min(...intervals)>.2,'speech intervals are not varying');
  assert.equal(first.viewport.height,after.viewport.height);
- record('24 seconds: at least six team lines, two encouragements, full reading time, one conversation plus one combat cue');
+ record('30 seconds: randomized speakers and intervals, up to three conversations, no duplicates, full reading time and encouragement');
  await page.locator('[data-inspect="crew-6"]').click();
- assert.match((await bubbles(page))[0],/일정 독려/);
+ assert.ok((await bubbles(page)).some(text=>text.includes('일정 독려')));
  await page.waitForFunction(()=>{const s=window.__OFFICE_DEBUG__.snapshot();return s.battle?.shieldRaised&&s.bubbles.some(b=>b.text==='방어!');});
  assert.deepEqual(await page.locator('.battle-pop:not([hidden])').allTextContents(),['방어!']);
- assert.match((await bubbles(page))[0],/일정 독려/,'defense interrupted the selected conversation');
- await page.locator('.scene-panel').screenshot({path:'test-results/team-dialogue-defense-desktop.png'});
+ assert.ok((await bubbles(page)).some(text=>text.includes('일정 독려')),'defense interrupted the selected conversation');
+ await page.locator('.scene-panel').screenshot({path:'test-results/random-dialogue-defense-desktop.png'});
  await page.locator('[data-inspect="pet"]').click();
- assert.deepEqual(await bubbles(page),['삐빅']);
+ assert.ok((await bubbles(page)).includes('삐빅'));assert.ok((await bubbles(page)).length<=3);
  record('selected conversation stays readable while defense displays on time');
  await page.emulateMedia({reducedMotion:'reduce'});await page.waitForTimeout(100);
  const frozen=await snap(page),fixedText=await bubbles(page);await page.waitForTimeout(300);
  assert.equal((await snap(page)).frames,frozen.frames);assert.deepEqual(await bubbles(page),fixedText);
- assert.ok(fixedText.length<=1);
+ assert.ok(fixedText.length<=3);
  await page.locator('#office-canvas').scrollIntoViewIfNeeded();
  const rect=await page.locator('#office-canvas').boundingBox();
  for(const key of ['crew-0','crew-5','crew-6']){
@@ -97,7 +104,7 @@ try{
    await page.locator(`#tab-${tab}`).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   }
   await page.locator('#tab-history').click();await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
-  if(width===1440||width===390)await page.screenshot({path:`test-results/team-dialogue-${width}.png`,fullPage:true});
+  if(width===1440||width===390)await page.screenshot({path:`test-results/random-dialogue-${width}.png`,fullPage:true});
  }
  record('12px secondary text, 44px rows, all tabs and seven desktop/mobile sizes fit');
  await page.setViewportSize({width:390,height:844});
@@ -105,7 +112,7 @@ try{
  assert.equal((await snap(page)).floor,'basement');
  assert.ok(await page.locator('button[data-floor="basement"]').evaluate(el=>getComputedStyle(el).outlineStyle==='solid'));
  assert.equal(await page.locator('.bubble:not([hidden])').evaluateAll(els=>els.filter(el=>getComputedStyle(el).visibility!=='hidden').length),0);
- await page.locator('.scene-panel').screenshot({path:'test-results/team-dialogue-basement.png'});
+ await page.locator('.scene-panel').screenshot({path:'test-results/random-dialogue-basement.png'});
  await page.locator('button[data-floor="office"]').click();assert.equal((await snap(page)).floor,'office');
  record('keyboard floor selection has visible focus; basement hides office bubbles');
  const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
@@ -113,12 +120,12 @@ try{
  await mobile.goto(url);await mobile.waitForFunction(()=>document.documentElement.dataset.officeReady==='true');
  assert.equal((await bubbles(mobile)).length,1,'initial reduced motion shows more than one bubble');
  await mobile.locator('[data-inspect="crew-5"]').tap();
- assert.match((await bubbles(mobile))[0],/운영 지원/);
+ assert.ok((await bubbles(mobile)).some(text=>text.includes('운영 지원')));assert.ok((await bubbles(mobile)).length<=3);
  assert.equal(await mobile.locator('.hover-label').evaluateAll(els=>els.filter(el=>getComputedStyle(el).visibility!=='hidden').length),0);
  await mobile.locator('#office-canvas').scrollIntoViewIfNeeded();
- await mobile.locator('.scene-panel').screenshot({path:'test-results/team-dialogue-touch.png'});
+ await mobile.locator('.scene-panel').screenshot({path:'test-results/random-dialogue-touch.png'});
  await mobile.close();
- record('mobile tap still opens character details without sticky hover signs or multiple bubbles');
+ record('mobile tap still opens character details without sticky hover signs or exceeding the speaker cap');
  assert.deepEqual(errors,[]);record('zero page, console and HTTP errors');
  await writeFile('test-results/polish-report.json',JSON.stringify({url,checks,contrast,errors},null,2));
 }catch(e){console.error(e);process.exitCode=1;await writeFile('test-results/polish-report.json',JSON.stringify({url,checks,errors,failure:String(e)},null,2));}
