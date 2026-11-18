@@ -14,6 +14,7 @@ export const ISSUES = [
   { id: 'php2shell', name: 'php2shell', grade: 'critical' },
   { id: 'javacert', name: 'Java 인증서', grade: 'high' },
   { id: 'nginx', name: 'nginx', grade: 'medium' },
+  { id: 'java4shell', name: 'java4shell', grade: 'critical' },
 ];
 export const RELEASES = [
   { ver: '4.7.4', state: 'released', date: '2026-11-13', ids: ['php2shell', 'javacert', 'nginx'] },
@@ -32,7 +33,7 @@ export const CREW = [
   { role: '운영 지원', shirt: '#e8b84a', walker: true, stops: ['커피 타임', '커피 내리는 중', '잠깐 산책', '자리 복귀'] },
   { role: '일정 독려', shirt: '#f5c542', walker: true, behavior: 'encourage', stops: peaceful ? ['모두 수고했어요', '패치 발행 완료', '커피 한잔하고 가요'] : ['패치 진행, 어디까지 왔죠?', '커밋 준비됐나요?', '테스트 끝나면 바로 공유'] },
 ];
-export const AS_OF_DATE = '2026-11-13';
+export const AS_OF_DATE = '2026-11-18';
 export const TIME_ZONE = 'Asia/Seoul';
 
 export function kstDate(date = new Date()) {

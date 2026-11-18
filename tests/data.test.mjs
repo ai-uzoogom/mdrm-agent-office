@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { kstDate,dDay,particle,activeIssues,resolvedIds,releaseIssues,patchRecords,ISSUES,RELEASES,GRADES,validateData } from '../src/data.js';
+import { kstDate,dDay,particle,activeIssues,resolvedIds,releaseIssues,patchRecords,ISSUES,RELEASES,GRADES,validateData,targetVersion } from '../src/data.js';
 
 test('KST day changes at 15:00 UTC independently of browser timezone',()=>{
  assert.equal(kstDate(new Date('2026-10-30T14:59:59Z')),'2026-10-30');
@@ -19,8 +19,10 @@ test('Korean particles use batchim, including grade-form subjects',()=>{
  assert.equal(particle('Java 인증서 오거','을/를'),'Java 인증서 오거를');
  assert.equal(particle('MDRM'),'MDRM이');
 });
-test('the published patch resolves all three issues and keeps their version and date',()=>{
- assert.equal(activeIssues().length,0);
+test('java4shell remains active while the three published patches keep their records',()=>{
+ assert.deepEqual(activeIssues().map(i=>i.id),['java4shell']);
+ assert.equal(activeIssues()[0].grade,'critical');
+ assert.equal(targetVersion(activeIssues()[0]),undefined);
  assert.equal(resolvedIds().size,3);
  assert.deepEqual(patchRecords().map(r=>[r.issue.id,r.version,r.date]),[
   ['php2shell','4.7.4','2026-11-13'],
@@ -37,13 +39,13 @@ test('repeated release references produce one grave with the latest patch date',
 });
 test('partial releases resolve only explicitly listed issues',()=>{
  const releases=[{state:'released',ids:['php2shell']}];
- assert.deepEqual(activeIssues(ISSUES,releases).map(i=>i.id),['javacert','nginx']);
+ assert.deepEqual(activeIssues(ISSUES,releases).map(i=>i.id),['javacert','nginx','java4shell']);
 });
 test('adding an issue automatically updates planned/current history; released history stays scoped',()=>{
  const added=[...ISSUES,{id:'test',name:'테스트 이슈',grade:'low'}];
- assert.deepEqual(activeIssues(added).map(i=>i.id),['test']);
- assert.equal(releaseIssues({...RELEASES[0],state:'planned'},added).length,4);
- assert.equal(releaseIssues({...RELEASES[1],state:'current'},added).length,4);
+ assert.deepEqual(activeIssues(added).map(i=>i.id),['java4shell','test']);
+ assert.equal(releaseIssues({...RELEASES[0],state:'planned'},added).length,5);
+ assert.equal(releaseIssues({...RELEASES[1],state:'current'},added).length,5);
  assert.equal(releaseIssues({...RELEASES[0],state:'released'},added).length,3);
 });
 test('content is valid and every configured grade has a form and color',()=>{

@@ -46,7 +46,9 @@ async function checkSurfaceLabels(page){
 }
 try{
  const source=await readFile('src/data.js','utf8');
- const plannedSource=source.replace("current: '4.7.4'","current: '4.7.3'")
+ // Keep historical scenarios independent of newly reported issues.
+ const peaceSource=source.replace(/^  \{ id: 'java4shell'.*\n/m,'');
+ const plannedSource=peaceSource.replace("current: '4.7.4'","current: '4.7.3'")
   .replace("ver: '4.7.4', state: 'released'","ver: '4.7.4', state: 'planned'")
   .replace("ver: '4.7.3', state: 'archived'","ver: '4.7.3', state: 'current'");
  const {context,page}=await openPage({source:plannedSource});
@@ -147,7 +149,7 @@ try{
  const changed=await openPage({reduced:'reduce',source:plannedSource.replace("id: 'nginx', name: 'nginx', grade: 'medium'","id: 'nginx', name: 'nginx', grade: 'critical'")});
  assert.equal((await snapshot(changed.page)).issues.find(i=>i.id==='nginx').grade,'critical');assert.ok((await changed.page.locator('[data-inspect="issue-nginx"]').textContent()).includes('드래곤'));assert.ok((await changed.page.locator('[data-grade="critical"]').textContent()).includes('nginx'));assert.equal(await changed.page.locator('.issue-card[data-issue="nginx"] h4').first().textContent(),'nginx 드래곤');
  record('grade change propagates to monster form and all information panels');await changed.context.close();
- const released=await openPage();
+ const released=await openPage({source:peaceSource});
  const peace=await snapshot(released.page);
  assert.equal(peace.peaceful,true);
  assert.equal(peace.riftOpen,false);
@@ -190,7 +192,7 @@ try{
  await screenshot(released.page,'peace-mobile');
  await released.context.close();
  record('published version stays peaceful and three grave clicks and keyboard link open patch records');
- const partial=await openPage({reduced:'reduce',source:source.replace("date: '2026-11-13', ids: ['php2shell', 'javacert', 'nginx']","date: '2026-11-13', ids: ['php2shell', 'javacert']")});
+ const partial=await openPage({reduced:'reduce',source:peaceSource.replace("date: '2026-11-13', ids: ['php2shell', 'javacert', 'nginx']","date: '2026-11-13', ids: ['php2shell', 'javacert']")});
  const mixed=await snapshot(partial.page);
  assert.equal(mixed.peaceful,false);
  assert.equal(mixed.riftOpen,true);
@@ -199,6 +201,28 @@ try{
  assert.equal(await partial.page.locator('.timeline-entry.released .issue-cards li').count(),2);
  await partial.context.close();
  record('partial patch preserves unpatched monster and creates graves only for published IDs');
+ const invasion=await openPage();
+ const current=await snapshot(invasion.page);
+ assert.equal(current.peaceful,false);assert.equal(current.riftOpen,true);
+ assert.deepEqual(current.issues.map(i=>[i.id,i.grade,i.kind]),[['java4shell','critical','dragon']]);
+ assert.deepEqual(current.graves.map(g=>g.id),['php2shell','javacert','nginx']);
+ assert.equal(await invasion.page.locator('.monster-row').count(),1);
+ assert.match(await invasion.page.locator('[data-inspect="issue-java4shell"]').textContent(),/java4shell 드래곤.*패치 대기 중/);
+ assert.match(await invasion.page.locator('#issue-count').textContent(),/1마리/);
+ assert.match(await invasion.page.locator('[data-grade="critical"]').textContent(),/java4shell/);
+ assert.equal(await invasion.page.locator('#panel-history [data-issue="java4shell"]').count(),0);
+ assert.equal(await invasion.page.locator('.timeline-entry.released .issue-card').count(),3);
+ await invasion.page.waitForTimeout(4500);
+ assert.ok((await snapshot(invasion.page)).metrics.breath>0,'new dragon never attacks');
+ await invasion.page.emulateMedia({reducedMotion:'reduce'});
+ await invasion.page.locator('[data-inspect="issue-java4shell"]').click();
+ assert.match((await invasion.page.locator('.bubble:not([hidden])').allTextContents()).join(''),/java4shell/);
+ await screenshot(invasion.page,'java4shell-desktop');
+ await invasion.page.setViewportSize({width:390,height:844});await noOverflow(invasion.page);
+ await invasion.page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));
+ await screenshot(invasion.page,'java4shell-mobile');
+ await invasion.context.close();
+ record('java4shell dragon reopens the rift and attacks; three graves and published history remain intact');
  assert.deepEqual(errors,[]);record('zero console errors, page errors and HTTP errors in all scenarios');
  await writeFile('test-results/browser-report.json',JSON.stringify({date:new Date().toISOString(),url:base,browser:browser.version(),checks,errors},null,2));
 }catch(error){
